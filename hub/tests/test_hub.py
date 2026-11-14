@@ -1,0 +1,295 @@
+"""Hub tests:  cd hub && python -m pytest -q"""
+import asyncio
+import json
+import os
+import sys
+import tempfile
+import time
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
+import pytest  # noqa: E402
+from websockets.asyncio.client import connect  # noqa: E402
+from websockets.exceptions import InvalidStatus  # noqa: E402
+
+from crewhub import environment as env  # noqa: E402
+from crewhub.pages import PAGES, Nav, handle, list_items, render  # noqa: E402
+from crewhub.protocol import Frame, Hello, Joy, Reply, command, parse_line  # noqa: E402
+from crewhub.serial_link import FakeUno  # noqa: E402
+from crewhub.server import HubServer  # noqa: E402
+from crewhub.state import HubState  # noqa: E402
+from crewhub.store import Store  # noqa: E402
+
+
+def new_state() -> HubState:
+    return HubState(Store(os.path.join(tempfile.mkdtemp(), "t.db")))
+
+
+# --- protocol -------------------------------------------------------------------------------------------------
+
+def test_parse_frame_hello_joystick_reply():
+    f = parse_line(b"S,12,t=22.41,rh=45.2,p=101.32,co2=612,o2=20.91,db=52.3,lux=310,rad=0.112,cpm=19,scn=2\r\n")
+    assert isinstance(f, Frame) and f.seq == 12 and f.scenario == "spike"
+    assert f.values["co2"] == 612 and f.values["rad_dose_rate"] == 0.112 and f.values["cabin_temp"] == 22.41
+    assert isinstance(parse_line("H,crew-sensors,1.0,t,rh"), Hello)
+    assert parse_line("J,L") == Joy("L") and parse_line("J,H") == Joy("H")
+    assert parse_line("A,scenario,ok") == Reply("scenario", True)
+
+
+@pytest.mark.parametrize("line", [
+    b"", b"\x00\xff\xfe", b"S,", b"S,abc,t=1", b"S,3,t=22.4,rh", b"S,3,t=nan", b"S,3,t=inf", b"J,X", b"J,", b"H,other,1.0",
+    b"A,ping,maybe", b"garbage line", b"S,4,zz=1", b"avrdude boot noise",
+])
+def test_parse_rejects_noise_and_half_lines(line):
+    assert parse_line(line) is None
+
+
+def test_unknown_sensor_keys_are_ignored():
+    f = parse_line("S,5,t=21.0,newsensor=3")
+    assert f.values == {"cabin_temp": 21.0}
+
+
+def test_command_encoding():
+    assert command("scenario", "spike") == b"C,scenario,spike\n"
+    with pytest.raises(ValueError):
+        command("x" * 60)
+
+
+# --- environment levels ---------------------------------------------------------------------------------------
+
+def test_levels():
+    assert env.level("co2", 800) == 0 and env.level("co2", 3000) == 1 and env.level("co2", 4500) == 2 and env.level("co2", 6000) == 3
+    assert env.level("o2", 20.9) == 0 and env.level("o2", 17) == 2 and env.level("o2", 26) == 3
+    assert env.level("pressure", 101.3) == 0 and env.level("pressure", 94) == 2
+    assert env.level("rad_dose_rate", 0.1, 0.1) == 0 and env.level("rad_dose_rate", 0.35, 0.1) == 1
+    assert env.level("rad_dose_rate", 1.2, 0.1) == 2 and env.level("rad_dose_rate", 6, 0.1) == 3
+    assert env.level("rad_dose_rate", 6, None) == 0      # no background learned yet: no judgement
+
+
+def test_state_learns_background_and_raises_spike_alert():
+    st = new_state()
+    uno = FakeUno(None, None, seed=1)
+    t0 = time.time() - 600
+    for i in range(400):
+        st.on_frame(uno.frame(), ts=t0 + i)
+    assert st.background and 0.07 < st.background < 0.13
+    new = st.on_frame(Frame(999, {"rad_dose_rate": 8.0}), ts=t0 + 401)
+    assert any(a.key.startswith("habitat:rad_dose_rate") and a.level == 3 for a in new)
+    key = new[0].key
+    st.mute(key)
+    assert all(a.key != key for a in st.alerts())
+    st.on_frame(Frame(1000, {"rad_dose_rate": 0.1}), ts=t0 + 402)     # level dropped → mute cleared
+    assert key not in st.muted
+
+
+def test_minute_rollup_is_stored():
+    st = new_state()
+    t0 = (int(time.time()) // 60 - 3) * 60
+    for i in range(130):
+        st.on_frame(Frame(i, {"co2": 600 + i}), ts=t0 + i)
+    hist = st.store.env_history("co2", t0 - 1)
+    assert len(hist) == 2 and hist[0][1] == pytest.approx(629.5)
+
+
+# --- pages ----------------------------------------------------------------------------------------------------
+
+def snapshot(level=0, alerts=None):
+    return {"person": {"id": "david", "name": "David"}, "overall": {"level": level, "title": "All good"},
+            "alerts": alerts or [], "mission": {"day": 3},
+            "metrics": {"hrv": {"label": "HRV", "unit": "ms", "decimals": 0, "group": "Heart", "value": 50, "spark": [48, 50]},
+                        "protein_g": {"label": "Protein", "unit": "g", "decimals": 0, "group": "Nutrition", "value": 90}}}
+
+
+@pytest.mark.parametrize("height", [64, 32])
+def test_every_page_renders(height):
+    st = new_state()
+    uno = FakeUno(None, None)
+    for i in range(30):
+        st.on_frame(uno.frame(), ts=time.time() - 30 + i)
+    st.set_snapshot("dev:david", snapshot(3, [{"key": "metric:sleep|d", "text": "Sleep 2.5 h below usual"}]), True)
+    for name in PAGES:
+        nav = Nav()
+        nav.go(name)
+        img = render(st, nav, (128, height))
+        assert img.size == (128, height) and img.mode == "1"
+        assert img.getbbox() is not None, name     # something is drawn
+    empty = new_state()
+    for name in PAGES:
+        nav = Nav(); nav.go(name)
+        render(empty, nav, (128, height))            # no data at all must not crash
+
+
+def test_navigation_and_actions():
+    st = new_state()
+    st.set_snapshot("dev:david", snapshot(3, [{"key": "metric:sleep|d", "text": "Sleep low"}]), True)
+    nav = Nav()
+    assert handle(nav, "R", st) is None and nav.name == "alerts"
+    assert handle(nav, "L", st) is None and nav.name == "home"
+    handle(nav, "L", st)
+    assert nav.name == PAGES[-1]                              # wraps around
+    nav.go("home")
+    handle(nav, "P", st)
+    assert nav.name == "alerts"                                # press on home jumps to alerts
+    act = handle(nav, "P", st)
+    assert act == ("ack", "person:dev:david:metric:sleep|d")
+    nav.go("demo")
+    handle(nav, "D", st); handle(nav, "D", st)
+    assert handle(nav, "P", st) == ("scenario", "spike")
+    nav.go("health")
+    items = list_items(st, "health")
+    assert items[0] == ("group", "Heart")
+    handle(nav, "P", st)
+    assert nav.detail == "hrv"                                 # group headings are skipped
+    handle(nav, "D", st)
+    assert nav.detail == "protein_g"
+    handle(nav, "H", st)
+    assert nav.name == "home" and nav.detail is None
+    handle(nav, "H", st)
+    assert nav.asleep
+    handle(nav, "R", st)
+    assert not nav.asleep and nav.name == "home"               # first input only wakes the screen
+
+
+# --- server ---------------------------------------------------------------------------------------------------
+
+def run(coro):
+    return asyncio.new_event_loop().run_until_complete(coro)
+
+
+async def _with_server(fn):
+    st = new_state()
+    sent = []
+    srv = HubServer(st, "K7Q2MX", "127.0.0.1", 0, send_to_uno=lambda n: sent.append(n) or True)
+    async with srv.serve() as server:
+        port = server.sockets[0].getsockname()[1]
+        return await fn(st, srv, port, sent)
+
+
+def test_server_requires_code_and_app_origin():
+    async def body(st, srv, port, sent):
+        with pytest.raises(InvalidStatus) as e:
+            async with connect(f"ws://127.0.0.1:{port}/", origin="app://crew-health-hub"):
+                pass
+        assert e.value.response.status_code == 401
+        with pytest.raises(InvalidStatus) as e:
+            async with connect(f"ws://127.0.0.1:{port}/?token=K7Q2MX", origin="http://evil.example"):
+                pass
+        assert e.value.response.status_code == 403
+        async with connect(f"ws://127.0.0.1:{port}/", origin="app://crew-health-hub",
+                           additional_headers={"Authorization": "Bearer k7q2mx"}) as ws:
+            hello = json.loads(await ws.recv())
+            assert hello["type"] == "hello" and hello["bridge"] == "crew-hub" and hello["simulated"] is False
+    run(_with_server(body))
+
+
+def test_upload_snapshot_scenario_roundtrip():
+    async def body(st, srv, port, sent):
+        async with connect(f"ws://127.0.0.1:{port}/?token=K7Q2MX", origin="app://crew-health-hub") as ws:
+            await ws.recv()
+            await ws.send(json.dumps({"type": "client", "device_id": "phone1", "name": "David's iPhone"}))
+            rows = [["u1", "hrv", 1700000000, 52, "ms", "Watch", "device"], ["u2", "activity_steps", 1700000000, 8000, "steps", "iPhone", "device"],
+                    ["bad"], ["u3", "hrv", 1700000100, float("nan")]]
+            await ws.send(json.dumps({"type": "upload", "seq": 1, "person": {"id": "david", "name": "David"}, "rows": rows}))
+            ack = json.loads(await ws.recv())
+            assert ack == {"type": "upload_ack", "seq": 1, "stored": 2, "removed": 0, "total": 2, "hub_total": 2}
+            await ws.send(json.dumps({"type": "upload", "seq": 2, "person": {"id": "david", "name": "David"}, "rows": [], "deleted": ["u1"]}))
+            ack = json.loads(await ws.recv())
+            assert ack["removed"] == 1 and ack["total"] == 1
+            await ws.send(json.dumps(dict(snapshot(1), type="snapshot", current=True)))
+            await ws.send(json.dumps({"type": "scenario", "name": "spike"}))
+            reply = json.loads(await ws.recv())
+            assert reply == {"type": "scenario_ack", "name": "spike", "ok": True} and sent == ["spike"]
+            assert st.current_person == "phone1:david" and st.person()["person"]["name"] == "David"
+            assert st.clients and list(st.clients.values())[0].name == "David's iPhone"
+            await srv.ack_person_alert("person:phone1:david:metric:sleep_hours|2026-11-14")
+            msg = json.loads(await ws.recv())
+            while msg["type"] != "ack_alert":
+                msg = json.loads(await ws.recv())
+            assert msg == {"type": "ack_alert", "device_id": "phone1", "person_id": "david", "key": "metric:sleep_hours|2026-11-14", "via": "hub"}
+    run(_with_server(body))
+
+
+# --- fast OLED driver ------------------------------------------------------------------------------------------
+
+class FakeBus:
+    def __init__(self):
+        self.writes = []
+
+    def write(self, addr, payload):
+        self.writes.append((addr, list(payload)))
+
+
+def test_page_packing_matches_reference():
+    import random
+    from PIL import Image
+    from crewhub.oled_fast import to_pages, to_pages_slow
+    rnd = random.Random(4)
+    for h in (64, 32):
+        img = Image.new("1", (128, h))
+        img.putdata([rnd.choice((0, 255)) for _ in range(128 * h)])
+        assert to_pages(img) == to_pages_slow(img)
+
+
+def test_delta_updates_send_only_changes():
+    from PIL import Image, ImageDraw
+    from crewhub.oled_fast import FastOled
+    bus = FakeBus()
+    oled = FastOled("ssd1306", 128, 64, 0x3C, bus=bus)
+    img = Image.new("1", (128, 64))
+    assert oled.show(img) == 0                          # identical frame: nothing sent
+    ImageDraw.Draw(img).rectangle([100, 1, 110, 6], fill=1)
+    bus.writes.clear()
+    sent = oled.show(img)
+    assert sent < 30                                    # one page, 11 columns (+ addressing), not 1 KB
+    cmd, data = bus.writes[-2][1], bus.writes[-1][1]
+    assert cmd == [0x00, 0x21, 100, 110, 0x22, 0, 0] and data[0] == 0x40 and len(data) == 12
+    st = new_state()
+    nav = Nav()
+    full = sum(len(p) for p in __import__("crewhub.oled_fast", fromlist=["to_pages"]).to_pages(render(st, nav)))
+    assert full == 1024
+
+
+def test_sh1106_uses_page_addressing_with_offset():
+    from PIL import Image, ImageDraw
+    from crewhub.oled_fast import FastOled
+    bus = FakeBus()
+    oled = FastOled("sh1106", 128, 64, 0x3C, bus=bus)
+    img = Image.new("1", (128, 64))
+    ImageDraw.Draw(img).point((5, 20), fill=1)
+    bus.writes.clear()
+    oled.show(img)
+    assert bus.writes[0][1] == [0x00, 0xB2, (5 + 2) & 0x0F, 0x10 | ((5 + 2) >> 4)]
+
+
+def test_web_app_is_served_and_push_subscription_needs_code():
+    import urllib.request
+    from crewhub.webpush import WebPush
+
+    async def body():
+        st = new_state()
+        push = WebPush(st.store, os.path.join(tempfile.mkdtemp(), "vapid.pem"), "https://example.test")
+        srv = HubServer(st, "K7Q2MX", "127.0.0.1", 0, public_origin="https://nasa.example.test", push=push)
+        async with srv.serve() as server:
+            port = server.sockets[0].getsockname()[1]
+            loop = asyncio.get_running_loop()
+            page = await loop.run_in_executor(None, lambda: urllib.request.urlopen(f"http://127.0.0.1:{port}/").read())
+            assert b"Helios" in page
+            sw = await loop.run_in_executor(None, lambda: urllib.request.urlopen(f"http://127.0.0.1:{port}/sw.js"))
+            assert sw.headers["Content-Type"].startswith("text/javascript")
+            with pytest.raises(Exception):
+                await loop.run_in_executor(None, lambda: urllib.request.urlopen(f"http://127.0.0.1:{port}/status"))
+            async with connect(f"ws://127.0.0.1:{port}/?token=K7Q2MX", origin="https://nasa.example.test") as ws:
+                hello = json.loads(await ws.recv())
+                assert push.available and hello["push_key"] == push.public_key and len(push.public_key) > 80
+                sub = {"endpoint": "https://push.example.test/abc", "keys": {"p256dh": "x" * 20, "auth": "y" * 8}}
+                await ws.send(json.dumps({"type": "push_subscribe", "subscription": sub}))
+                msg = json.loads(await ws.recv())
+                while msg["type"] != "push_ack":
+                    msg = json.loads(await ws.recv())
+                assert msg["ok"] and push.subscriptions()[0]["endpoint"] == sub["endpoint"]
+                await ws.send(json.dumps({"type": "push_subscribe", "subscription": {"endpoint": "http://insecure"}}))
+                msg = json.loads(await ws.recv())
+                while msg["type"] != "push_ack":
+                    msg = json.loads(await ws.recv())
+                assert msg["ok"] is False
+    run(body())

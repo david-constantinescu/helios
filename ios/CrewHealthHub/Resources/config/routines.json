@@ -1,0 +1,7 @@
+{"routines":[
+ {"id":"daily_checkin","label":"Daily check-in","cadence":"daily","time":"08:00","metrics":["mood","stress","workload","sleep_quality","symptom"],"estSeconds":60,"graceHours":14},
+ {"id":"sleep_review","label":"Sleep review","cadence":"daily","time":"07:30","metrics":["sleep_hours","sleep_quality"],"estSeconds":20,"graceHours":14},
+ {"id":"vitals_weekly","label":"Weekly vitals","cadence":"weekly","dow":1,"time":"08:30","everyDays":3,"metrics":["bp_sys","bp_dia","weight","body_temp","spo2"],"estSeconds":300,"graceHours":36},
+ {"id":"glucose","label":"Glucose check","cadence":"everyNDays","everyDays":3,"time":"07:45","metrics":["glucose"],"estSeconds":90,"graceHours":24},
+ {"id":"post_exercise","label":"Post-exercise heart rate","cadence":"after_event:exercise","metrics":["heart_rate"],"estSeconds":60,"enabled":false,"graceHours":4}
+]}

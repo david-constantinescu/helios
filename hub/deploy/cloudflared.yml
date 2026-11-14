@@ -1,0 +1,7 @@
+# Cloudflare tunnel: the hub's public address. Filled in by install.sh.
+tunnel: @TUNNEL@
+credentials-file: /etc/cloudflared/helios-hub.json
+ingress:
+  - hostname: @HOST@
+    service: http://localhost:8765
+  - service: http_status:404

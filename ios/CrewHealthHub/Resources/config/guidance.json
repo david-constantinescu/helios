@@ -1,0 +1,150 @@
+{
+  "_note": "DRAFT guidance. All text is decision-support wording for the prototype and is flagged verified:false until reviewed against official NASA / flight-surgeon material. The app never generates medical advice; it only shows this text.",
+  "metrics": {
+    "heart_rate_resting": {
+      "watch": {"whatItMayMean":["Possible contributors include short sleep, stress, dehydration, high workload, intense recent exercise or the start of an illness."],
+                "whatYouCanDo":["Re-measure at rest after 5 minutes seated.","Check today's sleep, fluids and workload.","Keep logging for the next 3 days."],
+                "whenToEscalate":["Contact the flight surgeon if it keeps rising for 3+ days, or comes with dizziness, chest discomfort or breathlessness."],"source":"TODO(verify)","verified":false},
+      "act":   {"whatItMayMean":["A sustained rise well above your normal deserves attention, especially with other changes such as poor sleep or low HRV."],
+                "whatYouCanDo":["Re-measure resting heart rate morning and evening.","Prioritise sleep and fluids today and reduce non-essential workload if you can.","Note any symptoms in a check-in."],
+                "whenToEscalate":["Report the trend to the flight surgeon at the next communication window.","Contact them sooner if you have chest discomfort, fainting, palpitations or breathlessness."],"source":"TODO(verify)","verified":false},
+      "escalate":{"whatItMayMean":["The reading is far outside your normal and outside general ranges."],
+                "whatYouCanDo":["Stop strenuous activity and rest.","Re-measure once to rule out a device error."],
+                "whenToEscalate":["Contact the flight surgeon / mission control now per mission procedures."],"source":"TODO(verify)","verified":false}
+    },
+    "heart_rate": {
+      "watch": {"whatItMayMean":["Heart rate readings are unusual compared with your normal."],"whatYouCanDo":["Note whether you were resting or active.","Re-measure after 5 minutes of rest."],"whenToEscalate":["Contact the flight surgeon if a high resting rate persists or comes with symptoms."],"source":"TODO(verify)","verified":false}
+    },
+    "hrv": {
+      "watch": {"whatItMayMean":["HRV below your normal often goes with stress, fatigue, short sleep or illness."],
+                "whatYouCanDo":["Protect tonight's sleep window.","Take short recovery breaks during the day.","Check in on mood and stress."],
+                "whenToEscalate":["Mention it to the flight surgeon if it stays low for a week or comes with other changes."],"source":"TODO(verify)","verified":false},
+      "act":   {"whatItMayMean":["HRV has stayed well below your normal."],"whatYouCanDo":["Ease training intensity for a day or two if allowed.","Prioritise sleep and recovery.","Log stressors and workload."],"whenToEscalate":["Report the trend at the next communication window."],"source":"TODO(verify)","verified":false}
+    },
+    "bp_sys": {
+      "watch": {"whatItMayMean":["Blood pressure is above your normal or general range. A single reading can be raised by stress, caffeine, talking or poor cuff position."],
+                "whatYouCanDo":["Re-measure following the how-to-measure steps: seated, rested, arm at heart level.","Take two readings a minute apart."],
+                "whenToEscalate":["Contact the flight surgeon if repeated readings stay high."],"source":"TODO(verify)","verified":false},
+      "act":   {"whatItMayMean":["Repeated high readings need review."],"whatYouCanDo":["Measure morning and evening for 3 days.","Note symptoms such as headache or vision changes."],"whenToEscalate":["Report readings to the flight surgeon.","Contact them now if you have severe headache, chest pain, confusion or vision loss."],"source":"TODO(verify)","verified":false},
+      "escalate":{"whatItMayMean":["The reading is very high."],"whatYouCanDo":["Sit quietly and re-measure once in 5 minutes."],"whenToEscalate":["Contact the flight surgeon / mission control now if it stays this high."],"source":"TODO(verify)","verified":false}
+    },
+    "bp_dia": {
+      "watch": {"whatItMayMean":["Diastolic pressure is outside your usual range."],"whatYouCanDo":["Re-measure with correct posture and cuff position."],"whenToEscalate":["Contact the flight surgeon if it stays high."],"source":"TODO(verify)","verified":false},
+      "act":   {"whatItMayMean":["Repeated high diastolic readings need review."],"whatYouCanDo":["Measure twice daily for 3 days."],"whenToEscalate":["Report readings to the flight surgeon."],"source":"TODO(verify)","verified":false}
+    },
+    "spo2": {
+      "watch": {"whatItMayMean":["Low readings are often caused by cold fingers, movement or poor sensor contact, but can reflect breathing or cabin-air problems."],
+                "whatYouCanDo":["Warm your hands and re-measure while still.","Check cabin CO₂ and ventilation if available."],
+                "whenToEscalate":["Contact the flight surgeon if repeat readings stay low or you feel breathless."],"source":"TODO(verify)","verified":false},
+      "act":   {"whatItMayMean":["Repeated low oxygen readings need attention."],"whatYouCanDo":["Rest and re-measure on another finger.","Report breathlessness, cough or chest pain."],"whenToEscalate":["Contact the flight surgeon promptly."],"source":"TODO(verify)","verified":false},
+      "escalate":{"whatItMayMean":["Oxygen reading is very low."],"whatYouCanDo":["Stop activity and re-measure immediately."],"whenToEscalate":["If it is confirmed, contact the flight surgeon / mission control now and follow atmosphere emergency procedures."],"source":"TODO(verify)","verified":false}
+    },
+    "body_temp": {
+      "watch": {"whatItMayMean":["Temperature is above or below your normal. Recent exercise, hot drinks or the measurement site can affect it."],
+                "whatYouCanDo":["Re-measure in 30 minutes at the same site.","Log any symptoms (chills, sore throat, cough)."],
+                "whenToEscalate":["Contact the flight surgeon if a fever persists or you feel unwell."],"source":"TODO(verify)","verified":false},
+      "act":   {"whatItMayMean":["A fever can be a sign of infection."],"whatYouCanDo":["Rest, drink fluids and re-measure every few hours.","Limit close contact with crew if possible."],"whenToEscalate":["Report to the flight surgeon."],"source":"TODO(verify)","verified":false},
+      "escalate":{"whatItMayMean":["Temperature is very high."],"whatYouCanDo":["Rest and re-measure to confirm."],"whenToEscalate":["Contact the flight surgeon / mission control now."],"source":"TODO(verify)","verified":false}
+    },
+    "wrist_temp": {
+      "watch": {"whatItMayMean":["Your overnight wrist temperature has shifted from your normal. Room temperature, bedding, alcohol, illness or cycle changes can contribute."],"whatYouCanDo":["Take a standard body-temperature reading.","Note any symptoms in your check-in."],"whenToEscalate":["Contact the flight surgeon if a body-temperature reading shows fever."],"source":"TODO(verify)","verified":false}
+    },
+    "glucose": {
+      "watch": {"whatItMayMean":["Glucose is outside your normal. Recent meals, exercise, stress and illness all affect it."],"whatYouCanDo":["Note when you last ate and re-measure as scheduled.","Keep meals regular."],"whenToEscalate":["Contact the flight surgeon if readings stay outside range."],"source":"TODO(verify)","verified":false},
+      "act":   {"whatItMayMean":["Repeated out-of-range glucose needs review."],"whatYouCanDo":["Measure before meals for the next 2 days.","Log meals and symptoms."],"whenToEscalate":["Report readings to the flight surgeon."],"source":"TODO(verify)","verified":false},
+      "escalate":{"whatItMayMean":["Glucose is at a level that can quickly affect how you feel and think."],"whatYouCanDo":["If low: follow your mission's low-glucose procedure.","Re-measure to confirm."],"whenToEscalate":["Contact the flight surgeon / mission control now."],"source":"TODO(verify)","verified":false}
+    },
+    "sleep_hours": {
+      "watch": {"whatItMayMean":["You are sleeping less than your normal. Schedules, light, noise and stress are common causes."],
+                "whatYouCanDo":["Protect a consistent sleep window tonight.","Dim lights and screens in the hour before sleep.","Avoid caffeine late in the day."],
+                "whenToEscalate":["Talk to the flight surgeon if short sleep continues for a week or affects your work."],"source":"TODO(verify)","verified":false},
+      "act":   {"whatItMayMean":["Several short nights in a row build sleep debt, which affects mood, alertness and recovery."],"whatYouCanDo":["Follow the Sleep reset playbook.","Plan a recovery night as soon as the schedule allows.","Take extra care with safety-critical tasks."],"whenToEscalate":["Report persistent sleep loss to the flight surgeon."],"source":"TODO(verify)","verified":false}
+    },
+    "sleep_quality": {
+      "watch": {"whatItMayMean":["You are rating your sleep lower than usual."],"whatYouCanDo":["Check sleep environment: light, noise, temperature.","Keep a regular wind-down routine."],"whenToEscalate":["Mention it at the next check-in with the flight surgeon if it continues."],"source":"TODO(verify)","verified":false}
+    },
+    "mood": {
+      "watch": {"whatItMayMean":["Mood is lower than your normal. Isolation, workload, conflict and sleep all play a part."],
+                "whatYouCanDo":["Plan a call or message with family or support if a window is available.","Schedule some personal time today.","Talk with a crewmate you trust."],
+                "whenToEscalate":["Contact the flight surgeon or behavioural-health support if low mood continues or affects daily life."],"source":"TODO(verify): NASA behavioural health","verified":false},
+      "act":   {"whatItMayMean":["Mood has been low for several days."],"whatYouCanDo":["Use your behavioural-health support resources.","Keep sleep, exercise and meals regular."],"whenToEscalate":["Contact behavioural-health support / the flight surgeon at the next window, or sooner if you feel unsafe."],"source":"TODO(verify)","verified":false}
+    },
+    "stress": {
+      "watch": {"whatItMayMean":["Stress is higher than your normal."],"whatYouCanDo":["Take short breaks and use a breathing or relaxation exercise.","Review today's workload with the commander if possible."],"whenToEscalate":["Contact support if stress stays high or affects sleep."],"source":"TODO(verify)","verified":false}
+    },
+    "workload": {
+      "watch": {"whatItMayMean":["Workload is higher than usual."],"whatYouCanDo":["Flag workload to the commander.","Protect sleep and meal times."],"whenToEscalate":["Raise it with mission control if it persists."],"source":"TODO(verify)","verified":false}
+    },
+    "appetite": {
+      "watch": {"whatItMayMean":["Lower appetite than usual can lead to low intake and mass loss."],"whatYouCanDo":["Try smaller, more frequent meals.","Log fluids and food."],"whenToEscalate":["Report persistent low appetite or nausea to the flight surgeon."],"source":"TODO(verify)","verified":false}
+    },
+    "exercise_min": {
+      "watch": {"whatItMayMean":["Countermeasure exercise is below your usual amount."],"whatYouCanDo":["Schedule today's exercise session.","Break it into shorter blocks if time is tight."],"whenToEscalate":["Talk to the flight surgeon or fitness team if something stops you exercising."],"source":"TODO(verify): NASA countermeasures","verified":false},
+      "act":   {"whatItMayMean":["Several days of low exercise increase deconditioning risk."],"whatYouCanDo":["Follow the Exercise countermeasures playbook.","Plan sessions in the schedule for the rest of the week."],"whenToEscalate":["Report the gap to the fitness team / flight surgeon."],"source":"TODO(verify)","verified":false}
+    },
+    "activity_steps": {
+      "watch": {"whatItMayMean":["General activity is lower than your normal."],"whatYouCanDo":["Add short movement breaks."],"whenToEscalate":["Mention it if it comes with fatigue or low mood."],"source":"TODO(verify)","verified":false}
+    },
+    "weight": {
+      "watch": {"whatItMayMean":["Body mass is changing compared with your normal, possibly from intake, fluids or muscle loss."],"whatYouCanDo":["Log meals and fluids for 3 days.","Keep up resistance exercise."],"whenToEscalate":["Report steady loss to the flight surgeon."],"source":"TODO(verify)","verified":false},
+      "act":   {"whatItMayMean":["Body mass has changed substantially."],"whatYouCanDo":["Review intake with the nutrition plan."],"whenToEscalate":["Report to the flight surgeon."],"source":"TODO(verify)","verified":false}
+    },
+    "resp_rate": {
+      "watch": {"whatItMayMean":["Breathing rate is different from your normal."],"whatYouCanDo":["Re-count at rest for a full minute.","Check cabin air readings if available."],"whenToEscalate":["Contact the flight surgeon if you feel breathless."],"source":"TODO(verify)","verified":false}
+    },
+    "cabin_co2": {
+      "watch": {"whatItMayMean":["Cabin CO₂ is elevated."],"whatYouCanDo":["Check ventilation and fans near your work and sleep areas.","Report to the crew member responsible for life support."],"whenToEscalate":["Follow habitat procedures and inform mission control."],"source":"TODO(verify)","verified":false}
+    },
+    "water_l": {
+      "watch": {"whatItMayMean":["Fluid intake is lower than your normal."],"whatYouCanDo":["Keep a drink within reach and log it."],"whenToEscalate":["Report if you feel dizzy or unwell."],"source":"TODO(verify)","verified":false}
+    }
+  },
+  "regions": {
+    "brain": {"whatYouCanDo":["Keep a regular sleep window and daily routine."],"whenToEscalate":["Contact support if you feel persistently low, anxious or confused."],"source":"TODO(verify)","verified":false},
+    "eyes": {"whatYouCanDo":["Report any new blurring or change in vision at the next check-in."],"whenToEscalate":["Contact the flight surgeon about sudden vision changes."],"source":"TODO(verify)","verified":false},
+    "heart": {"whatYouCanDo":["Keep up exercise, fluids and sleep."],"whenToEscalate":["Chest pain, fainting or severe breathlessness: contact the flight surgeon now."],"source":"TODO(verify)","verified":false},
+    "lungs": {"whatYouCanDo":["Check cabin air readings and ventilation."],"whenToEscalate":["Severe breathlessness: contact the flight surgeon now."],"source":"TODO(verify)","verified":false},
+    "gut": {"whatYouCanDo":["Keep meals and fluids regular and logged."],"whenToEscalate":["Persistent vomiting or inability to eat: contact the flight surgeon."],"source":"TODO(verify)","verified":false},
+    "bones_muscle": {"whatYouCanDo":["Complete daily countermeasure exercise."],"whenToEscalate":["Sudden severe pain or injury: contact the flight surgeon."],"source":"TODO(verify)","verified":false},
+    "immune_skin": {"whatYouCanDo":["Keep up hygiene and log temperature if unwell."],"whenToEscalate":["Fever or spreading rash: contact the flight surgeon."],"source":"TODO(verify)","verified":false},
+    "whole_body": {"whatYouCanDo":["Keep the radiation detector running and follow shelter procedures during events."],"whenToEscalate":["Follow mission radiation procedures and inform mission control."],"source":"TODO(verify)","verified":false}
+  },
+  "hazards": {
+    "radiation": {"whatYouCanDo":["Keep the dosimeter running and positioned consistently.","Know your shelter location and procedure."],"whenToEscalate":["During a radiation event follow the mission procedure and report to mission control."],"source":"TODO(verify)","verified":false},
+    "isolation": {"whatYouCanDo":["Use scheduled contact with home and support teams.","Keep personal time and routines."],"whenToEscalate":["Contact behavioural-health support if mood stays low."],"source":"TODO(verify)","verified":false},
+    "distance": {"whatYouCanDo":["Keep measurements and check-ins regular so changes are caught early."],"whenToEscalate":["Use the escalation rules; do not wait for symptoms to become severe."],"source":"TODO(verify)","verified":false},
+    "gravity": {"whatYouCanDo":["Complete countermeasure exercise daily.","Monitor heart rate, blood pressure and mass."],"whenToEscalate":["Fainting, chest pain or vision changes: contact the flight surgeon."],"source":"TODO(verify)","verified":false},
+    "closed_env": {"whatYouCanDo":["Check cabin CO₂, temperature and air quality.","Keep sleep areas dark and quiet."],"whenToEscalate":["Atmosphere alarms: follow habitat emergency procedures."],"source":"TODO(verify)","verified":false}
+  },
+  "patterns": {
+    "sleep_debt": {"label":"Sleep-debt pattern","fires":{"all":[{"metric":"sleep_hours","dir":"low","days":3},{"anyOf":[{"metric":"hrv","dir":"low"},{"metric":"mood","dir":"low"},{"metric":"stress","dir":"high"}]}]},
+      "raises":["brain","heart"],"raisesHazards":["isolation","closed_env"],
+      "whatItMayMean":["Several short nights together with lower HRV, lower mood or higher stress suggest building sleep debt."],
+      "whatYouCanDo":["Follow the Sleep reset playbook tonight.","Reduce late-day light and workload where possible."],
+      "whenToEscalate":["Talk to the flight surgeon if this continues for a week."],"source":"TODO(verify)","verified":false},
+    "cardio_strain": {"label":"Cardiovascular strain pattern","fires":{"all":[{"metric":"heart_rate_resting","dir":"high","days":3},{"metric":"hrv","dir":"low","days":2}]},
+      "raises":["heart"],"raisesHazards":["gravity"],
+      "whatItMayMean":["Resting heart rate up and HRV down together for several days suggests poor recovery or strain (illness, stress, dehydration, deconditioning)."],
+      "whatYouCanDo":["Measure blood pressure and SpO₂ today.","Prioritise sleep, fluids and recovery.","Log any symptoms."],
+      "whenToEscalate":["Report this pattern to the flight surgeon at the next window; sooner if you have chest discomfort, fainting or breathlessness."],"source":"TODO(verify)","verified":false},
+    "isolation_strain": {"label":"Isolation-strain pattern","fires":{"all":[{"metric":"mood","dir":"low","days":2},{"anyOf":[{"metric":"stress","dir":"high"},{"metric":"sleep_quality","dir":"low"},{"adherenceBelow":0.6,"routine":"daily_checkin"}]}]},
+      "raises":["brain"],"raisesHazards":["isolation","distance"],
+      "whatItMayMean":["Low mood together with high stress, poor sleep quality or missed check-ins can reflect the strain of isolation and confinement."],
+      "whatYouCanDo":["Schedule contact with home or support if possible.","Plan personal time and a crew activity.","Keep daily routines steady."],
+      "whenToEscalate":["Contact behavioural-health support if it continues or you feel unsafe."],"source":"TODO(verify)","verified":false},
+    "countermeasure_lapse": {"label":"Countermeasure lapse","fires":{"all":[{"metric":"exercise_min","dir":"low","days":4},{"anyOf":[{"metric":"weight","dir":"low"},{"metric":"activity_steps","dir":"low"},{"metric":"exercise_min","dir":"low","days":6}]}]},
+      "raises":["bones_muscle"],"raisesHazards":["gravity"],
+      "whatItMayMean":["Several days of reduced exercise, with falling activity or mass, increases bone and muscle deconditioning risk."],
+      "whatYouCanDo":["Follow the Exercise countermeasures playbook.","Book exercise blocks in the schedule this week."],
+      "whenToEscalate":["Tell the fitness team / flight surgeon what is preventing exercise."],"source":"TODO(verify)","verified":false}
+  },
+  "playbooks": {
+    "radiation_event": {"label":"Radiation event procedure","summary":"What to do when the dose rate spikes.","steps":["Follow your mission's shelter procedure and move to the designated shielded area.","Log the time and how you feel.","Keep the detector with you and keep monitoring dose rate.","Report to mission control.","Stay sheltered until mission control or the procedure says it is safe."],"source":"TODO(verify): official mission radiation procedure; CSA radiation monitoring","verified":false},
+    "sleep_reset": {"label":"Sleep reset","summary":"Rebuild a regular sleep window after short nights.","steps":["Pick a fixed sleep window for the next 3 nights.","Dim lights and screens 60 minutes before.","Keep the sleep station dark, quiet and cool.","Avoid caffeine in the 6 hours before sleep.","Log sleep each morning."],"source":"TODO(verify): NASA sleep countermeasures","verified":false},
+    "exercise_countermeasures": {"label":"Exercise countermeasures","summary":"Get back on track with daily exercise.","steps":["Schedule resistance and aerobic sessions in today's plan.","Start with a session you can complete; build back up over several days.","Log minutes after each session.","Report any pain or injury before continuing."],"source":"TODO(verify): NASA exercise countermeasures","verified":false},
+    "illness_watch": {"label":"Feeling unwell","summary":"Steps when you notice symptoms.","steps":["Log symptoms with severity and onset time.","Measure temperature, heart rate and SpO₂.","Rest, drink fluids and limit close contact with crew.","Check the red-flag list on the Escalation tab."],"source":"TODO(verify)","verified":false}
+  },
+  "redFlags": ["chest_pain","severe_breathlessness","loss_of_consciousness","severe_headache_sudden","confusion"],
+  "generic": {"whatYouCanDo":["Keep measuring and checking in so changes are caught early."],"whenToEscalate":["If you are worried about how you feel, contact the flight surgeon."]},
+  "escalationPage": ["Use the red-flag list below: any of these means contact the flight surgeon / mission control now.","Any status marked Escalate means contact them now, even if you feel fine.","Status Act: report at the next communication window, sooner if you feel worse.","When in doubt, call. Nobody minds a false alarm."]
+}

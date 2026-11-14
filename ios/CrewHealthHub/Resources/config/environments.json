@@ -1,0 +1,7 @@
+{"environments":[
+ {"id":"spacecraft","label":"Spacecraft (transit)","icon":"airplane","description":"Weightless transit: gravity, radiation and isolation are emphasised; post-exercise heart-rate checks are on.","emphasis":["gravity","radiation","isolation"],"routineOverrides":{"vitals_weekly":{"cadence":"weekly"},"post_exercise":{"enabled":true}}},
+ {"id":"station","label":"Space station","icon":"building.columns","description":"Orbital station: gravity, closed environment and isolation are emphasised.","emphasis":["gravity","closed_env","isolation"],"routineOverrides":{}},
+ {"id":"rover","label":"Rover / traverse","icon":"car","description":"Pressurised rover on a traverse: radiation and closed environment emphasised; glucose added to the daily check-in.","emphasis":["radiation","closed_env","distance"],"routineOverrides":{"daily_checkin":{"extra":["glucose"]},"vitals_weekly":{"cadence":"everyNDays"}}},
+ {"id":"lunar_base","label":"Lunar base","icon":"moon","description":"Surface habitat on the Moon: radiation, partial gravity and isolation emphasised.","emphasis":["radiation","gravity","isolation"],"routineOverrides":{}},
+ {"id":"mars_base","label":"Mars base","icon":"globe.europe.africa","description":"Mars surface: long communication delay, radiation, isolation and partial gravity; appetite added to the daily check-in.","emphasis":["distance","radiation","isolation","gravity"],"routineOverrides":{"daily_checkin":{"extra":["appetite"]}}}
+]}

@@ -1,0 +1,7 @@
+# Raspberry Pi: Pillow and pyserial come from apt (python3-pil, python3-serial); the venv uses --system-site-packages.
+websockets>=13,<16
+luma.oled>=3.12,<4
+pyserial>=3.5
+smbus2>=0.4
+Pillow>=9.2
+pywebpush>=2

@@ -1,0 +1,27 @@
+{
+  "name": "Helios Hub",
+  "serial": "auto",
+  "display": "oled",
+  "oled": {
+    "driver": "ssd1306",
+    "width": 128,
+    "height": 64,
+    "address": "0x3C",
+    "i2c_port": 1,
+    "rotate": 0
+  },
+  "joystick": {
+    "swap_xy": false,
+    "invert_x": false,
+    "invert_y": false
+  },
+  "host": "0.0.0.0",
+  "port": 8765,
+  "db": "/var/lib/crewhub/hub.db",
+  "token_file": "/var/lib/crewhub/token",
+  "home_after_s": 180,
+  "sleep_after_s": 1800,
+  "sensors": {},
+  "public_url": "https://nasa.softhoarders.me",
+  "vapid_key": "/var/lib/crewhub/vapid.pem"
+}

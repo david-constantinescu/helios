@@ -1,0 +1,26 @@
+{
+  "_note": "Engineering values. Bands are commonly cited adult ranges used only to make the prototype work; every entry must be replaced or confirmed from NASA / medical sources before use. Bands are inclusive at both ends; where they touch, the higher concern level wins. Absolute bands can only raise concern, never lower it.",
+  "engine": { "watchZ":2.0, "actZ":3.0, "escalateZ":4.5, "persistWatchDays":2, "persistActDays":3, "trendWatch":1.5, "trendAct":2.5, "minLearningDays":7, "windowDays":21, "staleDays":10, "baselineLagDays":3, "symptomLookbackDays":3 },
+  "ranges": {
+    "heart_rate_resting": {"unit":"bpm","bands":[{"level":"escalate","min":0,"max":35},{"level":"watch","min":35,"max":50},{"level":"ok","min":50,"max":90},{"level":"watch","min":90,"max":100},{"level":"act","min":100,"max":120},{"level":"escalate","min":120,"max":999}],"source":"TODO(verify)","verified":false},
+    "bp_sys": {"unit":"mmHg","bands":[{"level":"act","min":0,"max":85},{"level":"watch","min":85,"max":90},{"level":"ok","min":90,"max":130},{"level":"watch","min":130,"max":140},{"level":"act","min":140,"max":180},{"level":"escalate","min":180,"max":999}],"source":"TODO(verify)","verified":false},
+    "bp_dia": {"unit":"mmHg","bands":[{"level":"watch","min":0,"max":55},{"level":"ok","min":55,"max":85},{"level":"watch","min":85,"max":90},{"level":"act","min":90,"max":120},{"level":"escalate","min":120,"max":999}],"source":"TODO(verify)","verified":false},
+    "spo2": {"unit":"%","bands":[{"level":"escalate","min":0,"max":89},{"level":"act","min":89,"max":92},{"level":"watch","min":92,"max":95},{"level":"ok","min":95,"max":100}],"source":"TODO(verify)","verified":false},
+    "body_temp": {"unit":"C","bands":[{"level":"act","min":0,"max":35.0},{"level":"watch","min":35.0,"max":36.0},{"level":"ok","min":36.0,"max":37.5},{"level":"watch","min":37.5,"max":38.0},{"level":"act","min":38.0,"max":39.0},{"level":"escalate","min":39.0,"max":99}],"source":"TODO(verify)","verified":false},
+    "glucose": {"unit":"mg/dL","bands":[{"level":"escalate","min":0,"max":54},{"level":"act","min":54,"max":70},{"level":"ok","min":70,"max":140},{"level":"watch","min":140,"max":180},{"level":"act","min":180,"max":300},{"level":"escalate","min":300,"max":9999}],"source":"TODO(verify)","verified":false},
+    "sleep_hours": {"unit":"h","bands":[{"level":"act","min":0,"max":5.0},{"level":"watch","min":5.0,"max":6.0},{"level":"ok","min":6.0,"max":11},{"level":"watch","min":11,"max":24}],"source":"TODO(verify)","verified":false},
+    "resp_rate": {"unit":"breaths/min","bands":[{"level":"act","min":0,"max":8},{"level":"ok","min":8,"max":22},{"level":"watch","min":22,"max":26},{"level":"act","min":26,"max":99}],"source":"TODO(verify)","verified":false},
+    "mood": {"unit":"1–5","bands":[{"level":"watch","min":1,"max":1.5},{"level":"ok","min":1.5,"max":5}],"source":"TODO(verify)","verified":false},
+    "stress": {"unit":"1–5","bands":[{"level":"ok","min":1,"max":4.5},{"level":"watch","min":4.5,"max":5}],"source":"TODO(verify)","verified":false},
+    "cabin_co2": {"unit":"ppm","bands":[{"level":"ok","min":0,"max":3000},{"level":"watch","min":3000,"max":5000},{"level":"act","min":5000,"max":10000},{"level":"escalate","min":10000,"max":99999}],"source":"TODO(verify): NASA SMAC / habitat limits","verified":false},
+    "cabin_temp": {"unit":"C","bands":[{"level":"watch","min":0,"max":17},{"level":"ok","min":17,"max":28},{"level":"watch","min":28,"max":32},{"level":"act","min":32,"max":99}],"source":"TODO(verify)","verified":false}
+  },
+  "alwaysEscalate": [
+    {"metric":"symptom","match":["chest_pain","severe_breathlessness","loss_of_consciousness","severe_headache_sudden","confusion"],"reason":"Red-flag symptom reported"},
+    {"metric":"symptom","match":["shortness_of_breath","palpitations","vision_changes"],"minSeverity":3,"reason":"Severe symptom reported"},
+    {"metric":"spo2","below":88,"reason":"Very low blood-oxygen reading"},
+    {"metric":"body_temp","above":40,"reason":"Very high temperature reading"},
+    {"metric":"glucose","below":54,"reason":"Very low glucose reading"}
+  ],
+  "symptomLevels": {"1":"watch","2":"act","3":"act"}
+}

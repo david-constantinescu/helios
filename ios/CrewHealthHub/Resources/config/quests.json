@@ -1,0 +1,18 @@
+{
+ "xpPerLevel": 100,
+ "quests":[
+  {"id":"checkin_streak","label":"Check-in streak","description":"Complete today's 60-second check-in.","icon":"checklist","period":"daily","kind":"checkin","target":1,"xp":10},
+  {"id":"steady_sleep","label":"Regular sleep window","description":"Log at least 5 nights with 7 h or more of sleep this week.","icon":"bed.double","period":"weekly","kind":"sleep_window","target":5,"xp":40,"safetyNote":"Credit is for enough sleep, never for less."},
+  {"id":"hydration","label":"Hydration log","description":"Log your fluid intake today.","icon":"drop","period":"daily","kind":"water","target":1,"xp":5},
+  {"id":"exercise","label":"Countermeasure minutes","description":"Complete 300 minutes of countermeasure exercise this week.","icon":"figure.run","period":"weekly","kind":"exercise","target":300,"cap":90,"xp":50,"safetyNote":"Exercise credit is capped at 90 minutes a day to keep things healthy."},
+  {"id":"on_time","label":"Measure on time","description":"Complete 5 scheduled measurements on time this week.","icon":"clock.badge.checkmark","period":"weekly","kind":"on_time","target":5,"xp":30},
+  {"id":"shield_drill","label":"Shielding drill","description":"Read the radiation-event procedure and walk through it once.","icon":"shield.lefthalf.filled","period":"once","kind":"drill","target":1,"xp":30}
+ ],
+ "badges":[
+  {"id":"first_baseline","label":"First Baseline","icon":"chart.line.flattrend.xyaxis","criteria":"Any indicator finishes learning your normal."},
+  {"id":"week_one","label":"Week 1 Complete","icon":"7.circle","criteria":"Seven daily check-ins logged."},
+  {"id":"radiation_aware","label":"Radiation Aware","icon":"atom","criteria":"Completed the shielding drill."},
+  {"id":"steady_sleeper","label":"Steady Sleeper","icon":"moon.stars","criteria":"14 nights of 7 h+ sleep within the last 21 days."},
+  {"id":"full_log","label":"Full Mission Log","icon":"book.closed","criteria":"Check-ins on 90% of mission days after at least 30 days."}
+ ]
+}

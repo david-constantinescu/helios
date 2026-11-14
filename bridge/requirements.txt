@@ -1,0 +1,4 @@
+websockets>=12
+# Optional hardware drivers (install only what you use):
+# radiacode>=0.3     # Radiacode 10x (USB / Bluetooth) — TODO(verify) version against your device
+# pygmc>=0.10        # GQ GMC Geiger counters over USB serial — TODO(verify) protocol variant for your firmware

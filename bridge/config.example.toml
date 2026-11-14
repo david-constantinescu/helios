@@ -1,0 +1,11 @@
+# Helios bridge configuration (Python 3.11+: python bridge.py --config config.toml)
+driver = "simulated"        # simulated | radiacode | gmc
+scenario = "background"     # simulated only: background | spike
+host = "127.0.0.1"          # non-loopback hosts require a token
+ws_port = 8765
+hz = 1.0
+allow_origin = ["app://crew-health-hub", "http://localhost:8080"]
+# token = "change-me"
+# log = "samples.csv"
+# Radiacode:  usb = true   or   bluetooth_mac = "AA:BB:CC:DD:EE:FF"
+# GMC:        port = "/dev/ttyUSB0"   baud = 115200   cpm_to_usvh = <your labelled calibration>

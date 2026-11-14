@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Helios">
+<meta name="theme-color" content="#000000">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icon-180.png">
+<link rel="icon" href="/icon-192.png">
+<title>Helios</title>
+<style>
+  :root { color-scheme: dark; --bg:#000; --card:#1c1c1e; --sep:rgba(84,84,88,.45); --dim:rgba(235,235,245,.6);
+          --green:#30d158; --yellow:#ffd60a; --orange:#ff9f0a; --red:#ff453a; --blue:#0a84ff; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:#fff; font:17px/1.35 -apple-system, system-ui, "Helvetica Neue", sans-serif;
+         -webkit-font-smoothing:antialiased; padding: max(20px, env(safe-area-inset-top)) 16px 40px; }
+  main { max-width: 520px; margin: 0 auto; display:flex; flex-direction:column; gap:18px; }
+  header { display:flex; align-items:center; gap:12px; padding: 8px 4px 0; }
+  header img { width:44px; height:44px; border-radius:11px; }
+  h1 { margin:0; font-size:34px; font-weight:700; }
+  .sub { color:var(--dim); font-size:15px; margin:0 4px; }
+  .card { background:var(--card); border-radius:22px; padding:16px; }
+  .label { font-size:13px; color:var(--dim); text-transform:uppercase; margin:0 16px -10px; }
+  .status { font-size:13px; font-weight:600; text-transform:uppercase; }
+  .big { font-size:24px; font-weight:700; margin-top:4px; }
+  .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px 12px; }
+  .k { font-size:13px; color:var(--dim); } .v { font-size:22px; font-weight:600; font-variant-numeric: tabular-nums; }
+  .row { display:flex; justify-content:space-between; gap:12px; padding:10px 0; border-top:1px solid var(--sep); }
+  .row:first-child { border-top:0; }
+  button { font:600 17px -apple-system, system-ui, sans-serif; border:0; border-radius:14px; padding:14px; width:100%; color:#fff; background:var(--blue); }
+  button.secondary { background:rgba(255,255,255,.12); }
+  input { font:17px ui-monospace, Menlo, monospace; letter-spacing:2px; text-transform:uppercase; width:100%; padding:14px; border-radius:14px;
+          border:1px solid rgba(255,255,255,.15); background:#111; color:#fff; }
+  label { display:block; font-size:15px; color:var(--dim); margin-bottom:8px; }
+  .hidden { display:none !important; }
+  .ok{color:var(--green)} .watch{color:var(--yellow)} .act{color:var(--orange)} .escalate{color:var(--red)}
+  .hint { font-size:13px; color:var(--dim); margin:8px 4px 0; }
+</style>
+</head>
+<body>
+<main>
+  <header><img src="/icon-180.png" alt=""><div><h1>Helios</h1></div></header>
+  <p class="sub" id="conn">Not connected</p>
+
+  <section id="login" class="card hidden">
+    <form id="loginForm">
+      <label for="code">Hub code (on the hub's Connect page)</label>
+      <input id="code" autocomplete="off" autocapitalize="characters" maxlength="12" required>
+      <div style="height:12px"></div>
+      <button type="submit">Connect</button>
+    </form>
+  </section>
+
+  <section id="person" class="card hidden" aria-live="polite">
+    <div class="status" id="pStatus"></div>
+    <div class="big" id="pTitle"></div>
+    <div class="sub" id="pName" style="margin:4px 0 0"></div>
+    <div id="alerts" style="margin-top:10px"></div>
+  </section>
+
+  <p class="label hidden" id="habLabel">Habitat</p>
+  <section id="habitat" class="card grid hidden"></section>
+
+  <section id="push" class="card hidden">
+    <button id="enable">Allow alerts on this device</button>
+    <p class="hint" id="pushHint">On iPhone: Share › Add to Home Screen, open Helios from there, then allow alerts.</p>
+  </section>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+const LEVEL = ["ok","watch","act","escalate"], WORD = {ok:"Normal",watch:"Watch",act:"Act",escalate:"Call now"};
+const SENSORS = [["cabin_temp","Temperature","°C",1],["humidity","Humidity","%",0],["pressure","Pressure","kPa",1],
+                 ["co2","CO₂","ppm",0],["o2","Oxygen","%",1],["noise","Noise","dB",0],["rad_dose_rate","Radiation","µSv/h",3]];
+let ws, code = localStorage.getItem("helios.code") || "", vapid = null, retry = 1000;
+
+function connect() {
+  if (!code) { $("login").classList.remove("hidden"); return; }
+  const proto = location.protocol === "https:" ? "wss" : "ws";
+  ws = new WebSocket(`${proto}://${location.host}/?token=${encodeURIComponent(code)}`);
+  $("conn").textContent = "Connecting…";
+  ws.onopen = () => { retry = 1000; ws.send(JSON.stringify({type:"client", device_id:"web", name:"Web"})); };
+  ws.onmessage = (e) => { try { handle(JSON.parse(e.data)); } catch (_) {} };
+  ws.onclose = (e) => {
+    $("conn").textContent = "Reconnecting…";
+    setTimeout(connect, retry); retry = Math.min(retry * 2, 30000);
+  };
+  ws.onerror = () => { if (ws.readyState !== 1) { $("conn").textContent = "Check the hub code"; $("login").classList.remove("hidden"); } };
+}
+
+function handle(m) {
+  if (m.type === "hello") {
+    $("login").classList.add("hidden");
+    $("conn").textContent = `Live · ${m.hub && m.hub.name || "Helios Hub"}`;
+    vapid = m.push_key || null;
+    if (vapid && "serviceWorker" in navigator && "PushManager" in window) $("push").classList.remove("hidden");
+    ws.send(JSON.stringify({type:"web_state"}));
+  } else if (m.type === "env") {
+    $("habLabel").classList.remove("hidden"); $("habitat").classList.remove("hidden");
+    $("habitat").innerHTML = SENSORS.filter(s => m.values[s[0]] != null).map(([k,label,unit,d]) => {
+      const lvl = (m.levels && m.levels[k]) || "ok";
+      return `<div><div class="k">${label}</div><div class="v ${lvl === "ok" ? "" : lvl}">${Number(m.values[k]).toFixed(d)} ${unit}</div></div>`;
+    }).join("");
+  } else if (m.type === "web_state") {
+    const p = m.person;
+    if (!p) return;
+    $("person").classList.remove("hidden");
+    const lvl = LEVEL[Math.max(0, p.level)] || "ok";
+    $("pStatus").className = "status " + lvl; $("pStatus").textContent = p.level < 0 ? "No data" : WORD[lvl];
+    $("pTitle").textContent = p.title || "";
+    $("pName").textContent = p.name + (p.day ? ` · mission day ${p.day}` : "");
+    $("alerts").innerHTML = (m.alerts || []).map(a => `<div class="row"><span class="${LEVEL[a.level]}">${a.text.replace(/[<>&]/g, "")}</span></div>`).join("");
+  }
+}
+
+$("loginForm").onsubmit = (e) => {
+  e.preventDefault();
+  code = $("code").value.trim().toUpperCase();
+  localStorage.setItem("helios.code", code);
+  $("login").classList.add("hidden");
+  connect();
+};
+
+function b64ToBytes(s) {
+  const pad = "=".repeat((4 - s.length % 4) % 4), b = atob((s + pad).replace(/-/g, "+").replace(/_/g, "/"));
+  return Uint8Array.from(b, c => c.charCodeAt(0));
+}
+
+$("enable").onclick = async () => {
+  try {
+    const reg = await navigator.serviceWorker.register("/sw.js");
+    const perm = await Notification.requestPermission();
+    if (perm !== "granted") { $("pushHint").textContent = "Alerts are blocked for this site in Settings."; return; }
+    const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(vapid) });
+    ws.send(JSON.stringify({ type: "push_subscribe", subscription: sub.toJSON() }));
+    $("enable").textContent = "Alerts are on"; $("enable").className = "secondary";
+    $("pushHint").textContent = "Urgent alerts from the hub will reach this device.";
+  } catch (err) {
+    $("pushHint").textContent = "Couldn't turn on alerts: " + err.message;
+  }
+};
+
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
+connect();
+</script>
+</body>
+</html>

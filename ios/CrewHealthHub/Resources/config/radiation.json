@@ -1,0 +1,15 @@
+{
+  "_note": "All numbers are Engineering values. Dose budgets and limits must come from official agency / mission guidance (TODO(verify)).",
+  "budget": {"total_uSv": null, "source": "TODO(verify): official mission/agency guidance", "verified": false},
+  "alerts": {"budgetPercent":[{"level":"watch","at":50},{"level":"act","at":75},{"level":"escalate","at":90}],
+             "doseRate":{"watchMultiple":3,"actMultiple":10,"escalateMultiple":50}},
+  "spike": {"k":5, "f":3, "minutes":2},
+  "maxGapMin": 10,
+  "ewmaSeconds": 60,
+  "backgroundMinMinutes": 30,
+  "labels": {"device":"Radiation sensor (demonstration of device integration). Consumer detectors measure background radiation on Earth, not the space radiation environment."},
+  "shieldingTips": ["Move to the most shielded area designated by the mission (e.g. water or supply-lined storm shelter).","Keep the detector with you so dose during the event is recorded.","Minimise time in lightly shielded areas until the event ends."],
+  "explainer": "Flight crews use qualified dosimeters and space-weather forecasts to monitor radiation. The habitat's detector streams through the Helios Hub into the same analysis, so a flight dosimeter can plug in the same way.",
+  "source": "TODO(verify): CSA 'Monitoring Radiation for Astronaut Health'; NASA HRP Space Radiation",
+  "verified": false
+}

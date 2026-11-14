@@ -1,0 +1,22 @@
+# Build output
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.xcuserdatad/
+# Python
+__pycache__/
+.pytest_cache/
+*.pyc
+.venv/
+# Hub runtime data and secrets (never commit)
+*.db
+*.db-wal
+*.db-shm
+*.pem
+token
+hub/oled-preview/
+hub/deploy/tunnel-credentials.json
+*.credentials.json
+# macOS
+.DS_Store

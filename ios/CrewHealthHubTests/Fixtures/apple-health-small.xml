@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE HealthData [
+<!ELEMENT HealthData (ExportDate,Me,(Record|Correlation|Workout)*)>
+<!ATTLIST Record type CDATA #REQUIRED unit CDATA #IMPLIED value CDATA #IMPLIED sourceName CDATA #REQUIRED startDate CDATA #REQUIRED endDate CDATA #REQUIRED>
+<!ENTITY ext SYSTEM "http://example.invalid/should-never-be-fetched">
+]>
+<HealthData locale="en_US">
+ <ExportDate value="2026-11-10 08:00:00 +0000"/>
+ <Me HKCharacteristicTypeIdentifierBiologicalSex="HKBiologicalSexNotSet"/>
+ <Record type="HKQuantityTypeIdentifierHeartRate" sourceName="Watch" unit="count/min" startDate="2026-11-09 02:00:10 +0000" endDate="2026-11-09 02:00:10 +0000" value="55"/>
+ <Record type="HKQuantityTypeIdentifierHeartRate" sourceName="Watch" unit="count/min" startDate="2026-11-09 02:01:10 +0000" endDate="2026-11-09 02:01:10 +0000" value="57"/>
+ <Record type="HKQuantityTypeIdentifierHeartRate" sourceName="Watch" unit="count/min" startDate="2026-11-09 02:02:10 +0000" endDate="2026-11-09 02:02:10 +0000" value="59"/>
+ <Record type="HKQuantityTypeIdentifierRestingHeartRate" sourceName="Watch" unit="count/min" startDate="2026-11-09 08:00:00 +0000" endDate="2026-11-09 08:00:00 +0000" value="58"/>
+ <Record type="HKQuantityTypeIdentifierRestingHeartRate" sourceName="Watch" unit="count/min" startDate="2026-11-09 08:00:00 +0000" endDate="2026-11-09 08:00:00 +0000" value="58"/>
+ <Record type="HKQuantityTypeIdentifierHeartRateVariabilitySDNN" sourceName="Watch" unit="ms" startDate="2026-11-09 03:00:00 +0000" endDate="2026-11-09 03:00:00 +0000" value="48.5"/>
+ <Record type="HKQuantityTypeIdentifierOxygenSaturation" sourceName="Watch" unit="%" startDate="2026-11-09 03:10:00 +0000" endDate="2026-11-09 03:10:00 +0000" value="0.97"/>
+ <Record type="HKQuantityTypeIdentifierBloodPressureSystolic" sourceName="Cuff" unit="mmHg" startDate="2026-11-09 08:30:00 +0000" endDate="2026-11-09 08:30:00 +0000" value="119"/>
+ <Record type="HKQuantityTypeIdentifierBloodPressureDiastolic" sourceName="Cuff" unit="mmHg" startDate="2026-11-09 08:30:00 +0000" endDate="2026-11-09 08:30:00 +0000" value="77"/>
+ <Record type="HKQuantityTypeIdentifierBodyTemperature" sourceName="Thermo" unit="degF" startDate="2026-11-09 08:40:00 +0000" endDate="2026-11-09 08:40:00 +0000" value="98.6"/>
+ <Record type="HKQuantityTypeIdentifierBloodGlucose" sourceName="Meter" unit="mmol&lt;180.1558800000541&gt;/L" startDate="2026-11-09 07:45:00 +0000" endDate="2026-11-09 07:45:00 +0000" value="5.2"/>
+ <Record type="HKQuantityTypeIdentifierBodyMass" sourceName="Scale" unit="lb" startDate="2026-11-09 07:00:00 +0000" endDate="2026-11-09 07:00:00 +0000" value="165"/>
+ <Record type="HKQuantityTypeIdentifierStepCount" sourceName="iPhone" unit="count" startDate="2026-11-09 10:00:00 +0000" endDate="2026-11-09 10:30:00 +0000" value="1200"/>
+ <Record type="HKQuantityTypeIdentifierAppleExerciseTime" sourceName="Watch" unit="min" startDate="2026-11-09 17:00:00 +0000" endDate="2026-11-09 17:30:00 +0000" value="30"/>
+ <Record type="HKCategoryTypeIdentifierSleepAnalysis" sourceName="Watch" startDate="2026-11-08 22:30:00 +0000" endDate="2026-11-09 06:30:00 +0000" value="HKCategoryValueSleepAnalysisInBed"/>
+ <Record type="HKCategoryTypeIdentifierSleepAnalysis" sourceName="Watch" startDate="2026-11-08 23:00:00 +0000" endDate="2026-11-09 03:00:00 +0000" value="HKCategoryValueSleepAnalysisAsleepCore"/>
+ <Record type="HKCategoryTypeIdentifierSleepAnalysis" sourceName="iPhone" startDate="2026-11-09 01:00:00 +0000" endDate="2026-11-09 04:00:00 +0000" value="HKCategoryValueSleepAnalysisAsleepUnspecified"/>
+ <Record type="HKCategoryTypeIdentifierSleepAnalysis" sourceName="Watch" startDate="2026-11-09 04:00:00 +0000" endDate="2026-11-09 04:20:00 +0000" value="HKCategoryValueSleepAnalysisAwake"/>
+ <Record type="HKCategoryTypeIdentifierSleepAnalysis" sourceName="Watch" startDate="2026-11-09 04:20:00 +0000" endDate="2026-11-09 06:20:00 +0000" value="HKCategoryValueSleepAnalysisAsleepREM"/>
+ <Record type="HKQuantityTypeIdentifierDietaryEnergyConsumed" sourceName="App" unit="kcal" startDate="2026-11-09 12:00:00 +0000" endDate="2026-11-09 12:00:00 +0000" value="600"/>
+ <Record type="HKQuantityTypeIdentifierHeartRate" sourceName="Watch" unit="count/min" startDate="2020-01-01 00:00:00 +0000" endDate="2020-01-01 00:00:00 +0000" value="70"/>
+</HealthData>
