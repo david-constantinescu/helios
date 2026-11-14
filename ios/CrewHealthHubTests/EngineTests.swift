@@ -120,14 +120,15 @@ final class BaselineStatusTests: XCTestCase {
                                      range: cfg.ranges.ranges[d.id], rules: cfg.ranges.alwaysEscalate, now: Date(), tz: utc)
     }
 
-    func testLearningThenActive() {
-        let s = series("heart_rate_resting", [60, 61, 59, 60, 62])
-        let e = eval(s)
-        XCTAssertEqual(e.baseline.state, .learning)
+    /// Your normal starts from whatever history exists — no learning period.
+    func testActiveFromFirstDaysOfHistory() {
+        let e = eval(series("heart_rate_resting", [60, 61, 59, 60, 62]))
+        XCTAssertEqual(e.baseline.state, .active)
+        XCTAssertEqual(e.baseline.median, 60, accuracy: 0.01)
         XCTAssertEqual(e.status.level, .ok)
-        XCTAssertTrue(e.status.reasons.contains { $0.code == "learning" })
-        let e2 = eval(series("heart_rate_resting", [60, 61, 59, 60, 62, 61, 60, 59]))
-        XCTAssertEqual(e2.baseline.state, .active)
+        XCTAssertFalse(e.status.reasons.contains { $0.code == "learning" })
+        let one = eval(series("heart_rate_resting", [60]))
+        XCTAssertEqual(one.baseline.state, .active)
     }
     func testMADFloor() {
         let e = eval(series("heart_rate_resting", Array(repeating: 60, count: 20)))
