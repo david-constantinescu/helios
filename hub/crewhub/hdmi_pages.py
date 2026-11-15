@@ -587,6 +587,21 @@ def _hub(S: Screen, state: HubState, net: Dict[str, Any], box: Tuple[float, floa
 
 # --------------------------------------------------------------------------------------------------------------
 
+def _draw_splash(S: Screen) -> None:
+    sz = int(round(210 * S.k))
+    S.glass(S.lw / 2 - 150, 130, 300, 300, 80)
+    S.c.img.paste(_mark(sz), ((S.w - sz) // 2, int(175 * S.k)), _mark(sz))
+    S.text(S.lw / 2, 500, "Helios", 64, "Bold", TEXT, "mm")
+    S.text(S.lw / 2, 552, "Crew health, on board", 24, "Medium", DIM, "mm")
+
+
+def splash_image(size: Tuple[int, int] = (1280, 720)) -> Image.Image:
+    """The start-up screen as an image (used for the boot logo)."""
+    S = Screen(*size)
+    _draw_splash(S)
+    return S.c.img
+
+
 def _sig(values) -> int:
     """A cheap fingerprint of a data series, so an unchanged chart is not redrawn."""
     return hash(tuple(round(v, 3) for v in values if v is not None))
@@ -727,11 +742,7 @@ class Renderer:
             return S.c.img, self._take()
         if mode == "splash":
             def splash() -> None:
-                sz = int(round(210 * S.k))
-                S.glass(S.lw / 2 - 150, 130, 300, 300, 80)
-                S.c.img.paste(_mark(sz), ((S.w - sz) // 2, int(175 * S.k)), _mark(sz))
-                S.text(S.lw / 2, 500, "Helios", 64, "Bold", TEXT, "mm")
-                S.text(S.lw / 2, 552, "Crew health, on board", 24, "Medium", DIM, "mm")
+                _draw_splash(S)
             self.widget("splash", (0, 0, S.lw, 720), 1, splash)
             return S.c.img, self._take()
 

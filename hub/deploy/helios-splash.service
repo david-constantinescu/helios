@@ -1,0 +1,13 @@
+[Unit]
+Description=Helios start-up logo
+DefaultDependencies=no
+After=systemd-udevd.service
+Before=sysinit.target
+ConditionPathExists=/opt/crewhub/splash.fb
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh /opt/crewhub/splash.sh
+
+[Install]
+WantedBy=sysinit.target

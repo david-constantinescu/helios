@@ -65,6 +65,18 @@ if "tft" not in cur:
 PY
 sudo chown -R "$RUN_AS:$RUN_AS" /var/lib/crewhub
 
+say "Start-up logo (shown as soon as the screen exists, before the hub is up)"
+sudo mkdir -p /opt/crewhub
+if (cd /opt/crewhub/app && sudo /opt/crewhub/venv/bin/python -m crewhub.splash --make /opt/crewhub/splash.fb) > /tmp/splash.info 2>&1; then
+  SPLASH_VS=$(cat /sys/class/graphics/fb0/virtual_size); SPLASH_BPP=$(cat /sys/class/graphics/fb0/bits_per_pixel)
+  printf '#!/bin/sh\nfor i in $(seq 1 100); do [ -e /dev/fb0 ] && break; sleep 0.1; done\n[ "$(cat /sys/class/graphics/fb0/virtual_size)" = "%s" ] && [ "$(cat /sys/class/graphics/fb0/bits_per_pixel)" = "%s" ] && cat /opt/crewhub/splash.fb > /dev/fb0\nexit 0\n' "$SPLASH_VS" "$SPLASH_BPP" | sudo tee /opt/crewhub/splash.sh >/dev/null
+  sudo cp "$HUB_DIR/deploy/helios-splash.service" /etc/systemd/system/helios-splash.service
+  sudo systemctl daemon-reload && sudo systemctl enable helios-splash.service >/dev/null 2>&1
+  echo "logo ready: $(cat /tmp/splash.info)"
+else
+  echo "no screen attached; the start-up logo is skipped ($(cat /tmp/splash.info))"
+fi
+
 say "Starting the service and advertising it on the network"
 sed "s/@USER@/$RUN_AS/g" "$HUB_DIR/deploy/crewhub.service" | sudo tee /etc/systemd/system/crewhub.service >/dev/null
 sudo cp "$HUB_DIR/deploy/crewhub.avahi.service" /etc/avahi/services/crewhub.service

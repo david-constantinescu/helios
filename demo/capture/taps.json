@@ -951,8 +951,137 @@
   }
  },
  {
+  "clip": "A08-mission-play",
+  "t": 2.0,
+  "type": "tap",
+  "x": 349,
+  "y": 759,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A08-mission-play",
+  "t": 16.21,
+  "type": "tap",
+  "x": 349,
+  "y": 759,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A12-radiation-event",
+  "t": 2.51,
+  "type": "tap",
+  "x": 349,
+  "y": 759,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A12-radiation-event",
+  "t": 35.91,
+  "type": "swipe",
+  "x": 200,
+  "y": 700,
+  "x2": 200,
+  "y2": 300,
+  "duration": 1.3,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A12-radiation-event",
+  "t": 39.99,
+  "type": "swipe",
+  "x": 200,
+  "y": 300,
+  "x2": 200,
+  "y2": 700,
+  "duration": 1.3,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A13-acknowledge",
+  "t": 3.48,
+  "type": "tap",
+  "x": 201,
+  "y": 829,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A13-acknowledge",
+  "t": 7.7,
+  "type": "tap",
+  "x": 201,
+  "y": 497,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A13-acknowledge",
+  "t": 10.44,
+  "type": "tap",
+  "x": 201,
+  "y": 756,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A13-acknowledge",
+  "t": 26.39,
+  "type": "swipe",
+  "x": 200,
+  "y": 700,
+  "x2": 200,
+  "y2": 300,
+  "duration": 1.1,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A13-acknowledge",
+  "t": 30.27,
+  "type": "tap",
+  "x": 201,
+  "y": 781,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
   "clip": "A11-hazards",
-  "t": 4.03,
+  "t": 4.47,
   "type": "swipe",
   "x": 200,
   "y": 700,
@@ -967,13 +1096,40 @@
  },
  {
   "clip": "A11-hazards",
-  "t": 8.44,
+  "t": 9.25,
+  "type": "swipe",
+  "x": 300,
+  "y": 300,
+  "x2": 300,
+  "y2": 700,
+  "duration": 1.5,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A14-radiation-detail",
+  "t": 2.0,
+  "type": "tap",
+  "x": 201,
+  "y": 316,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A14-radiation-detail",
+  "t": 8.19,
   "type": "swipe",
   "x": 200,
   "y": 700,
   "x2": 200,
   "y2": 300,
-  "duration": 1.5,
+  "duration": 1.4,
   "unit": "pt",
   "screen": {
    "wPt": 402,
@@ -981,14 +1137,14 @@
   }
  },
  {
-  "clip": "A11-hazards",
-  "t": 12.91,
+  "clip": "A14-radiation-detail",
+  "t": 12.56,
   "type": "swipe",
   "x": 200,
-  "y": 300,
+  "y": 700,
   "x2": 200,
-  "y2": 700,
-  "duration": 1.5,
+  "y2": 300,
+  "duration": 1.4,
   "unit": "pt",
   "screen": {
    "wPt": 402,
@@ -996,14 +1152,14 @@
   }
  },
  {
-  "clip": "A11-hazards",
-  "t": 15.87,
+  "clip": "A14-radiation-detail",
+  "t": 16.95,
   "type": "swipe",
   "x": 200,
-  "y": 300,
+  "y": 700,
   "x2": 200,
-  "y2": 700,
-  "duration": 1.5,
+  "y2": 300,
+  "duration": 1.4,
   "unit": "pt",
   "screen": {
    "wPt": 402,
@@ -1011,14 +1167,14 @@
   }
  },
  {
-  "clip": "A11-hazards",
-  "t": 18.85,
+  "clip": "A14-radiation-detail",
+  "t": 21.33,
   "type": "swipe",
   "x": 200,
-  "y": 300,
+  "y": 700,
   "x2": 200,
-  "y2": 700,
-  "duration": 1.5,
+  "y2": 300,
+  "duration": 1.4,
   "unit": "pt",
   "screen": {
    "wPt": 402,
