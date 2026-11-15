@@ -47,6 +47,15 @@ def main() -> None:
         page_ms.append((t2 - t0) * 1000)
         page_kb.append(n / 1024)
         print(f"  {name:10s} render {(t1 - t0) * 1000:6.0f} ms   write {(t2 - t1) * 1000:5.0f} ms   {n / 1024:7.0f} KB")
+    warm_ms = []
+    for name in PAGES * 2:                                     # visit every page again: the glass and text caches are warm now
+        nav = Nav()
+        nav.go(name)
+        t0 = time.perf_counter()
+        img, dirty = rd.draw(st, nav, size, now, NET)
+        fb.show_regions(img, dirty)
+        warm_ms.append((time.perf_counter() - t0) * 1000)
+    print(f"page change, warm: {statistics.mean(warm_ms):.0f} ms average, worst {max(warm_ms):.0f} ms")
     nav = Nav()
     nav.go("home")
     img, dirty = rd.draw(st, nav, size, now, NET)

@@ -547,3 +547,39 @@ def test_hub_widescreen_loop_draws_changes_only(tmp_path, monkeypatch):
     frames = hub.display.frames
     assert frames and frames[0][0] == (1280, 720)
     assert 2 <= len(frames) < 30 * 3                          # drawn when something changed, not on every 1/30 s tick
+
+
+def test_deck_switches_pages_by_copying_prepacked_frames_and_background_never_touches_the_screen():
+    from crewhub.deck import Deck
+    from crewhub.fb_fast import FastFb, FbInfo, pack
+    from crewhub.hdmi_pages import Renderer
+    st = _wide_state()
+    w, h = 1280, 720
+    fb = FastFb(info=FbInfo(w, h, 16, w * 2), buf=bytearray(w * h * 2))
+    net = {"token": "ABC123", "ip": "1.2.3.4", "public": "x.me"}
+    deck, nav, now = Deck(), Nav(), time.time()
+    deck.draw_active(st, nav, (w, h), now, net, fb)
+    assert bytes(fb.buf) == pack(Renderer().draw(st, nav, (w, h), now, net)[0], 16)
+    before = bytes(fb.buf)
+    deck.background(st, nav, (w, h), now, net, fb, count=10)
+    assert bytes(fb.buf) == before                              # refreshing other pages in the background never writes to the screen
+    assert len(deck.pages) == len(PAGES) and all(p.ready for p in deck.pages.values())
+    for key in ("R", "R", "L", "L", "L"):
+        handle(nav, key, st)
+        written = deck.draw_active(st, nav, (w, h), now, net, fb)
+        assert written == w * h * 2                              # a page change is one full pre-packed frame
+        assert bytes(fb.buf) == pack(Renderer().draw(st, nav, (w, h), now, net)[0], 16), nav.name
+    nav.go("vitals")
+    deck.draw_active(st, nav, (w, h), now, net, fb)
+    handle(nav, "D", st)                                         # a move inside a page writes only a small part
+    assert 0 < deck.draw_active(st, nav, (w, h), now, net, fb) < w * h * 2
+
+
+def test_widescreen_header_shows_houston_and_mars_time_not_link_pills():
+    from crewhub.hdmi_pages import houston_clock, mars_clock
+    import calendar
+    t = float(calendar.timegm((2026, 11, 15, 0, 26, 0)))
+    assert houston_clock(t) == "18:26"                          # Central time is UTC-6 in November
+    h, m = map(int, mars_clock(t).split(":"))
+    assert 0 <= h < 24 and 0 <= m < 60
+    assert mars_clock(t + 88775.244) == mars_clock(t)           # a sol later: the same Mars clock time

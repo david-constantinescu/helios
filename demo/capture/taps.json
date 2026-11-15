@@ -610,7 +610,7 @@
  },
  {
   "clip": "A06-checkin",
-  "t": 4.05,
+  "t": 6.02,
   "type": "tap",
   "x": 254,
   "y": 93,
@@ -622,7 +622,7 @@
  },
  {
   "clip": "A06-checkin",
-  "t": 7.58,
+  "t": 11.22,
   "type": "tap",
   "x": 275,
   "y": 275,
@@ -634,7 +634,7 @@
  },
  {
   "clip": "A06-checkin",
-  "t": 9.62,
+  "t": 14.83,
   "type": "tap",
   "x": 201,
   "y": 799,
@@ -646,7 +646,7 @@
  },
  {
   "clip": "A06-checkin",
-  "t": 13.12,
+  "t": 20.02,
   "type": "tap",
   "x": 70,
   "y": 513,
@@ -658,7 +658,7 @@
  },
  {
   "clip": "A06-checkin",
-  "t": 15.92,
+  "t": 24.84,
   "type": "tap",
   "x": 201,
   "y": 799,
@@ -670,7 +670,7 @@
  },
  {
   "clip": "A06-checkin",
-  "t": 20.41,
+  "t": 30.98,
   "type": "tap",
   "x": 201,
   "y": 799,
@@ -682,10 +682,214 @@
  },
  {
   "clip": "A06-checkin",
-  "t": 25.42,
+  "t": 37.77,
   "type": "tap",
   "x": 201,
   "y": 455,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A07-manual-bp",
+  "t": 2.0,
+  "type": "tap",
+  "x": 300,
+  "y": 83,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A07-manual-bp",
+  "t": 5.78,
+  "type": "tap",
+  "x": 277,
+  "y": 135,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A07-manual-bp",
+  "t": 11.23,
+  "type": "tap",
+  "x": 74,
+  "y": 306,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A07-manual-bp",
+  "t": 18.16,
+  "type": "tap",
+  "x": 222,
+  "y": 306,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A07-manual-bp",
+  "t": 25.16,
+  "type": "tap",
+  "x": 350,
+  "y": 99,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A09-body-heart",
+  "t": 4.1,
+  "type": "tap",
+  "x": 217,
+  "y": 308,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A09-body-heart",
+  "t": 10.25,
+  "type": "swipe",
+  "x": 200,
+  "y": 650,
+  "x2": 200,
+  "y2": 250,
+  "duration": 1.4,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A09-body-heart",
+  "t": 14.4,
+  "type": "swipe",
+  "x": 200,
+  "y": 650,
+  "x2": 200,
+  "y2": 250,
+  "duration": 1.4,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A09-body-heart",
+  "t": 18.04,
+  "type": "swipe",
+  "x": 200,
+  "y": 250,
+  "x2": 200,
+  "y2": 700,
+  "duration": 1.4,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A09-body-heart",
+  "t": 21.19,
+  "type": "swipe",
+  "x": 200,
+  "y": 250,
+  "x2": 200,
+  "y2": 700,
+  "duration": 1.4,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A09-body-heart",
+  "t": 24.37,
+  "type": "tap",
+  "x": 36,
+  "y": 84,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A10-trends",
+  "t": 2.01,
+  "type": "tap",
+  "x": 296,
+  "y": 688,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A10-trends",
+  "t": 9.81,
+  "type": "tap",
+  "x": 311,
+  "y": 261,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A10-trends",
+  "t": 15.0,
+  "type": "tap",
+  "x": 348,
+  "y": 261,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A10-trends",
+  "t": 20.13,
+  "type": "tap",
+  "x": 262,
+  "y": 261,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A10-trends",
+  "t": 24.77,
+  "type": "tap",
+  "x": 300,
+  "y": 83,
   "unit": "pt",
   "screen": {
    "wPt": 402,

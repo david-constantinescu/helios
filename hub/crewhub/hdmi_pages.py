@@ -118,17 +118,34 @@ class Screen:
     def wrap(self, t: str, px: float, weight: str, maxw: float, lines: int) -> List[str]:
         return self.c.wrap(t, self._px(px), weight, maxw * self.k, lines)
 
-    def glass(self, x: float, y: float, w: float, h: float, r: float = 28, tint=None, tint_a: float = 0.0, hi: float = 1.0) -> None:
+    def glass_tile(self, x: float, y: float, w: float, h: float, r: float = 28, tint=None, tint_a: float = 0.0, hi: float = 1.0):
         k = self.k
         box = (max(0, int(round(x * k))), max(0, int(round(y * k))), min(self.w, int(round((x + w) * k))), min(self.h, int(round((y + h) * k))))
         if box[2] - box[0] < 4 or box[3] - box[1] < 4:
-            return
+            return None, None
         key = ("glass",) + box + (int(round(r * k)), tint, round(tint_a, 2), round(hi, 2))
         tile = _cache_get(key)
         if tile is None:
             tile = _glass_tile(self.bg, box, int(round(r * k)), tint, tint_a, hi, k)
             _cache_put(key, tile, 4 * tile[0].size[0] * tile[0].size[1])
-        self.c.img.paste(tile[0], (box[0], box[1]), tile[1])
+        return box, tile
+
+    def glass(self, x: float, y: float, w: float, h: float, r: float = 28, tint=None, tint_a: float = 0.0, hi: float = 1.0) -> None:
+        box, tile = self.glass_tile(x, y, w, h, r, tint, tint_a, hi)
+        if tile is not None:
+            self.c.img.paste(tile[0], (box[0], box[1]), tile[1])
+
+    def restore_glass(self, panel: Tuple[float, float, float, float], pb: Tuple[int, int, int, int], r: float = 30) -> None:
+        """Puts a panel's own glass back under a region (a list row) before it is redrawn."""
+        box, tile = self.glass_tile(*panel, r)
+        if tile is None:
+            self.restore(pb)
+            return
+        crop = (pb[0] - box[0], pb[1] - box[1], pb[2] - box[0], pb[3] - box[1])
+        if crop[0] < 0 or crop[1] < 0 or crop[2] > tile[0].size[0] or crop[3] > tile[0].size[1]:
+            self.restore(pb)
+            return
+        self.c.img.paste(tile[0].crop(crop), (pb[0], pb[1]))
 
     def panel(self, x: float, y: float, w: float, h: float, r: float = 30) -> None:
         self.glass(x, y, w, h, r)
@@ -180,25 +197,48 @@ class Screen:
 # Chrome: header, tab bar, joystick hint
 # --------------------------------------------------------------------------------------------------------------
 
-def _header(S: Screen, title: str, state: HubState, now: float, blink: bool) -> None:
+@lru_cache(maxsize=1)
+def _houston_tz():
+    try:
+        from zoneinfo import ZoneInfo
+        return ZoneInfo("America/Chicago")
+    except Exception:  # noqa: BLE001 — no tz database: Central Standard Time
+        from datetime import timedelta, timezone
+        return timezone(timedelta(hours=-6))
+
+
+def houston_clock(now: float) -> str:
+    from datetime import datetime
+    return datetime.fromtimestamp(now, _houston_tz()).strftime("%H:%M")
+
+
+def mars_clock(now: float) -> str:
+    """Coordinated Mars Time (the time of day at Mars's prime meridian), from the Mars Sol Date."""
+    jd_tt = now / 86400.0 + 2440587.5 + (37 + 32.184) / 86400.0
+    msd = (jd_tt - 2405522.0028779) / 1.0274912517
+    hours = (msd % 1.0) * 24
+    return f"{int(hours):02d}:{int((hours % 1) * 60):02d}"
+
+
+def _header(S: Screen, title: str, houston: str, mars: str, blink: bool) -> None:
     if blink:
         S.glass(M - 12, 18, S.lw - 2 * M + 24, 70, 35, LEVEL[3], 0.62, 1.3)
     sz = int(round(40 * S.k))
     S.c.img.paste(_mark(sz), (int(M * S.k), int(35 * S.k)), _mark(sz))
     S.text(M + 54, 54, title, 36, "Bold", TEXT)
-    clock = time.strftime("%H:%M", time.localtime(now))
-    cw = S.width(clock, 24, "Medium")
-    pw, uw = S.width("Phone", 16, "Medium"), S.width("Uno", 16, "Medium")
-    total = cw + pw + uw + 24 + 24 + 22 + 22 + 40
+    hw, mw = S.width("Houston", 16, "Medium"), S.width("Mars", 16, "Medium")
+    tw = S.width("00:00", 26, "Bold")
+    total = 28 + hw + 12 + tw + 34 + mw + 12 + tw + 28
     x = S.lw - M - total
     S.capsule(x, 26, total, 56)
-    cx = x + 26
-    S.dot(cx, 54, 6, ACCENT if state.clients else FAINT)
-    S.text(cx + 14, 54, "Phone", 16, "Medium", TEXT if state.clients else DIM)
-    cx += 14 + pw + 26
-    S.dot(cx, 54, 6, LEVEL[0] if state.uno_connected else FAINT)
-    S.text(cx + 14, 54, "Uno", 16, "Medium", TEXT if state.uno_connected else DIM)
-    S.text(S.lw - M - 24, 54, clock, 24, "Medium", TEXT, "rm")
+    cx = x + 28
+    S.text(cx, 54, "Houston", 16, "Medium", DIM)
+    cx += hw + 12
+    S.text(cx, 54, houston, 26, "Bold", TEXT)
+    cx += tw + 34
+    S.text(cx, 54, "Mars", 16, "Medium", (255, 150, 110))
+    cx += mw + 12
+    S.text(cx, 54, mars, 26, "Bold", TEXT)
 
 
 def _tabbar(S: Screen, page: int, alerts: List[Alert]) -> None:
@@ -264,51 +304,34 @@ def _window(nav: Nav, items: List[Tuple[str, Any]], cur: int, heights: List[floa
     return start
 
 
-def _list_card(S: Screen, nav: Nav, items: List[Tuple[str, Any]], cur: int, row: Callable[[str, Any], Tuple[str, str, int, bool]],
-               box: Tuple[float, float, float, float], empty: str, row_h: float = 62) -> None:
+def _list_row(S: Screen, box: Tuple[float, float, float, float], yy: float, hh: float, kind: str, payload: Any, data, sel: bool, sep: bool) -> None:
     x, y, w, h = box
-    S.panel(x, y, w, h)
-    if not items:
-        S.text(x + w / 2, y + h / 2, empty, 22, "Medium", DIM, "mm")
+    if kind == "group":
+        S.text(x + 34, yy + hh - 10, str(payload).upper(), 14, "Bold", FAINT, "ls")
         return
-    heights = [38 if it[0] == "group" else row_h for it in items]
-    avail = h - 24
-    start = _window(nav, items, cur, heights, avail)
-    yy = y + 12
-    last = start
-    for i in range(start, len(items)):
-        kind, payload = items[i]
-        hh = heights[i]
-        if yy + hh > y + h - 8:
-            break
-        last = i
-        if kind == "group":
-            S.text(x + 34, yy + hh - 10, str(payload).upper(), 14, "Bold", FAINT, "ls")
-            yy += hh
-            continue
-        left, right, lvl, marked = row(kind, payload)
-        sel = i == cur
-        if sel:
-            S.focus(x + 10, yy + 2, w - 20, hh - 4)
-        elif i + 1 < len(items) and i + 1 != cur and items[i + 1][0] != "group" and yy + hh + 2 < y + h - 8:
-            S.hline(x + 56, x + w - 28, yy + hh - 1)
-        cy = yy + hh / 2
-        if marked:
-            S.check(x + 36, cy, 10, TEXT if sel else ACCENT, 3)
-        elif lvl > 0:
-            S.dot(x + 36, cy, 7, LEVEL[lvl])
-        rcol = TEXT if sel else (LEVEL[lvl] if lvl > 0 else DIM)
-        if right:
-            S.text(x + w - 32, cy, right, 22, "Bold" if sel else "Medium", rcol, "rm")
-        room = w - 64 - 32 - (S.width(right, 22, "Medium") + 16 if right else 0)
-        S.text(x + 62, cy, S.fit(left, 23, "Bold" if sel else "Regular", room), 23, "Bold" if sel else "Regular", TEXT)
-        yy += hh
-    if start > 0 or last < len(items) - 1:
-        total = len(items)
-        shown = last - start + 1
-        th = max(30, (h - 40) * shown / total)
-        ty = y + 20 + (h - 40 - th) * (start / max(1, total - shown))
-        S.capsule(x + w - 11, ty, 5, th, None, 0, 1.6)
+    left, right, lvl, marked = data
+    if sel:
+        S.focus(x + 10, yy + 2, w - 20, hh - 4)
+    elif sep:
+        S.hline(x + 56, x + w - 28, yy + hh - 1)
+    cy = yy + hh / 2
+    if marked:
+        S.check(x + 36, cy, 10, TEXT if sel else ACCENT, 3)
+    elif lvl > 0:
+        S.dot(x + 36, cy, 7, LEVEL[lvl])
+    rcol = TEXT if sel else (LEVEL[lvl] if lvl > 0 else DIM)
+    if right:
+        S.text(x + w - 32, cy, right, 22, "Bold" if sel else "Medium", rcol, "rm")
+    room = w - 64 - 32 - (S.width(right, 22, "Medium") + 16 if right else 0)
+    S.text(x + 62, cy, S.fit(left, 23, "Bold" if sel else "Regular", room), 23, "Bold" if sel else "Regular", TEXT)
+
+
+def _list_scroll(S: Screen, box: Tuple[float, float, float, float], start: int, last: int, total: int) -> None:
+    x, y, w, h = box
+    shown = last - start + 1
+    th = max(30, (h - 40) * shown / total)
+    ty = y + 20 + (h - 40 - th) * (start / max(1, total - shown))
+    S.capsule(x + w - 11, ty, 5, th, None, 0, 1.6)
 
 
 # --------------------------------------------------------------------------------------------------------------
@@ -589,6 +612,7 @@ class Renderer:
         self.mode: Any = None
         self.layout: Any = None
         self.toast: Any = None
+        self.slots = 0
 
     # --- plumbing ----------------------------------------------------------------------------------------------
     def _reset(self, size: Tuple[int, int]) -> None:
@@ -603,15 +627,73 @@ class Renderer:
         x, y, w, h = lbox
         return (max(0, int(x * S.k) - grow), max(0, int(y * S.k) - grow), min(S.w, int((x + w) * S.k) + grow + 1), min(S.h, int((y + h) * S.k) + grow + 1))
 
-    def widget(self, name: str, lbox: Tuple[float, float, float, float], key: Any, fn: Callable[[], None]) -> None:
+    def widget(self, name: str, lbox: Tuple[float, float, float, float], key: Any, fn: Callable[[], None],
+               restore: Optional[Callable[[Tuple[int, int, int, int]], None]] = None, cache: bool = False) -> None:
         pb = self._px(lbox)
         old = self.keys.get(name)
         if old is not None and old[0] == key and old[1] == pb:
             return
-        self.S.restore(pb)
-        fn()
+        S = self.S
+        ck = ("w", self.size, name.split("#")[0], repr(key), pb) if cache else None
+        hit = _cache_get(ck) if ck else None
+        if hit is not None:                                       # this exact picture was drawn before: paste it instead of redrawing
+            S.c.img.paste(hit, (pb[0], pb[1]))
+        else:
+            (restore or S.restore)(pb)
+            fn()
+            if ck:
+                crop = S.c.img.crop(pb)
+                _cache_put(ck, crop, 3 * crop.size[0] * crop.size[1])
         self.keys[name] = (key, pb)
         self.dirty.append(pb)
+
+    def _list(self, S: Screen, nav: Nav, items: List[Tuple[str, Any]], cur: int, row: Callable[[str, Any], Tuple[str, str, int, bool]],
+              box: Tuple[float, float, float, float], empty: str, row_h: float = 62) -> None:
+        """A list panel whose rows are separate widgets: moving the focus lens redraws two rows, not the whole panel."""
+        x, y, w, h = box
+        def panel() -> None:
+            S.panel(x, y, w, h)
+            if not items:
+                S.text(x + w / 2, y + h / 2, empty, 22, "Medium", DIM, "mm")
+        self.widget("c:lp", box, (bool(items), empty if not items else ""), panel)
+        prev = self.slots
+        if not items:
+            self._drop_rows(S, box, 0)
+            return
+        heights = [38 if it[0] == "group" else row_h for it in items]
+        start = _window(nav, items, cur, heights, h - 24)
+        vis: List[Tuple[int, float, float]] = []
+        yy = y + 12
+        for i in range(start, len(items)):
+            if yy + heights[i] > y + h - 8:
+                break
+            vis.append((i, yy, heights[i]))
+            yy += heights[i]
+        for slot, (i, ry, hh) in enumerate(vis):
+            kind, payload = items[i]
+            data = None if kind == "group" else row(kind, payload)
+            sel = i == cur
+            nxt = i + 1 < len(items) and i + 1 != cur and items[i + 1][0] != "group" and slot + 1 < len(vis)
+            sep = nxt and not sel
+            key = (i, kind, payload if kind == "group" else data, sel, sep, ry)
+            self.widget(f"c:lr{slot}", (x + 6, ry, w - 12, hh), key,
+                        lambda kind=kind, payload=payload, data=data, sel=sel, sep=sep, ry=ry, hh=hh: _list_row(S, box, ry, hh, kind, payload, data, sel, sep),
+                        restore=lambda pb: S.restore_glass(box, pb))
+        self._drop_rows(S, box, len(vis))
+        last = start + len(vis) - 1
+        if start > 0 or last < len(items) - 1:
+            self.widget("c:ls", (x + w - 18, y + 14, 16, h - 28), (start, last, len(items)), lambda: _list_scroll(S, box, start, last, len(items)),
+                        restore=lambda pb: S.restore_glass(box, pb))
+        elif "c:ls" in self.keys:
+            S.restore_glass(box, self.keys["c:ls"][1])
+            self.dirty.append(self.keys.pop("c:ls")[1])
+
+    def _drop_rows(self, S: Screen, box, keep: int) -> None:
+        """Erases row widgets that were on screen last frame but are not needed now (a shorter window)."""
+        for k in [k for k in self.keys if k.startswith("c:lr") and int(k[4:]) >= keep]:
+            pb = self.keys.pop(k)[1]
+            S.restore_glass(box, pb)
+            self.dirty.append(pb)
 
     def _forget(self, prefix: str) -> None:
         for k in [k for k in self.keys if k.startswith(prefix)]:
@@ -669,9 +751,9 @@ class Renderer:
         content = (M, TOP, W, H)
         has_items = bool(items) and page not in ("home", "radiation", "hub")
 
-        self.widget("header", (M - 14, 14, S.lw - 2 * M + 28, 78),
-                    (title, time.strftime("%H:%M", time.localtime(now)), blink, bool(state.clients), state.uno_connected),
-                    lambda: _header(S, title, state, now, blink))
+        houston, mars = houston_clock(now), mars_clock(now)
+        self.widget("header", (M - 14, 14, S.lw - 2 * M + 28, 78), (title, houston, mars, blink),
+                    lambda: _header(S, title, houston, mars, blink))
         self.widget("tabs", (M - 4, TAB_Y - 4, TABW + 8, TAB_H + 8), (nav.page, len(alerts), max([a.level for a in alerts] + [0])),
                     lambda: _tabbar(S, nav.page, alerts))
         self.widget("hint", (M + TABW + 16, TAB_Y - 4, S.lw - 2 * M - TABW - 12, TAB_H + 8), (page, nav.detail is not None, has_items, bool(alerts)),
@@ -693,23 +775,23 @@ class Renderer:
 
         if nav.detail is not None and page in ("cabin", "vitals", "activity", "health"):
             kind = "sensor" if nav.detail in env.SENSORS else "metric"
-            w("c:detail", content, _metric_key(state, kind, nav.detail, metrics), lambda: _metric_pane(S, state, kind, nav.detail, metrics, content))
+            w("c:detail", content, _metric_key(state, kind, nav.detail, metrics), lambda: _metric_pane(S, state, kind, nav.detail, metrics, content), cache=True)
         elif page == "home":
             lb, cb, rb = _home_boxes(content)
             w("c:hl", lb, (p.get("person"), (p.get("mission") or {}).get("day"), _home_status(state, p), p.get("overall"), tuple((a.text, a.level) for a in alerts[:3]), len(alerts), repr(p.get("changes"))),
-              lambda: _home_left(S, state, p, alerts, lb))
+              lambda: _home_left(S, state, p, alerts, lb), cache=True)
             w("c:hc", cb, (tuple((k, state.latest.get(k), state.levels.get(k, 0)) for k in HOME_SENSORS if k in state.latest),
-                           max(state.levels.values()) if state.levels else None), lambda: _home_cabin(S, state, cb))
+                           max(state.levels.values()) if state.levels else None), lambda: _home_cabin(S, state, cb), cache=True)
             w("c:hr", rb, (round(state.latest.get("rad_dose_rate", -1), 3), state.levels.get("rad_dose_rate", 0), round(state.ratio() or 0, 1),
-                           _sig(state.series("rad_dose_rate", 900)), round(state.background or 0, 4)), lambda: _home_rad(S, state, rb))
+                           _sig(state.series("rad_dose_rate", 900)), round(state.background or 0, 4)), lambda: _home_rad(S, state, rb), cache=True)
         elif page == "radiation":
             w("c:rad", content, (round(state.latest.get("rad_dose_rate", -1), 3), state.levels.get("rad_dose_rate", 0), round(state.ratio() or 0, 1),
                                  _sig(state.series("rad_dose_rate", 900)), round(state.cum_dose, 2), round(state.background or 0, 4),
-                                 state.latest.get("rad_cpm")), lambda: _radiation(S, state, content))
+                                 state.latest.get("rad_cpm")), lambda: _radiation(S, state, content), cache=True)
         elif page == "hub":
             up = int(now - state.started)
             w("c:hub", content, (net.get("token"), net.get("ip"), net.get("public"), len(state.clients), state.uno_connected, net.get("records", 0), up // 60),
-              lambda: _hub(S, state, net, content))
+              lambda: _hub(S, state, net, content), cache=True)
         elif page == "alerts":
             if not items:
                 def quiet() -> None:
@@ -722,9 +804,8 @@ class Renderer:
             else:
                 def arow(k: str, a: Alert) -> Tuple[str, str, int, bool]:
                     return a.text, "", a.level, False
-                rows = tuple((a.text, a.level) for _, a in items)
-                w("c:list", left, (rows, cur), lambda: _list_card(S, nav, items, cur, arow, left, "", row_h=90))
-                w("c:pane", right, (items[cur][1].text, items[cur][1].level), lambda: _alert_pane(S, items[cur][1], right))
+                self._list(S, nav, items, cur, arow, left, "", row_h=90)
+                w("c:pane", right, (items[cur][1].text, items[cur][1].level), lambda: _alert_pane(S, items[cur][1], right), cache=True)
         elif page in ("cabin", "vitals", "activity", "health"):
             if page == "cabin":
                 def row(k: str, sid: str) -> Tuple[str, str, int, bool]:
@@ -736,11 +817,10 @@ class Renderer:
                     text = split_metric(m)[0] if mid == "bp_sys" else metric_text(m)
                     return m.get("label", mid), text, int(m.get("level", 0) or 0), False
                 empty = "No data from the phone yet" if not state.snapshots else "Nothing recorded"
-            rows = tuple((k, payload if k == "group" else row(k, payload)) for k, payload in items)
-            w("c:list", left, (rows, cur), lambda: _list_card(S, nav, items, cur, row, left, empty))
+            self._list(S, nav, items, cur, row, left, empty)
             if items and items[cur][0] in ("metric", "sensor"):
                 kind, mk = items[cur]
-                w("c:pane", right, _metric_key(state, kind, mk, metrics), lambda: _metric_pane(S, state, kind, mk, metrics, right))
+                w("c:pane", right, _metric_key(state, kind, mk, metrics), lambda: _metric_pane(S, state, kind, mk, metrics, right), cache=True)
             else:
                 w("c:pane", right, 0, lambda: S.panel(*right))
         elif page == "crew":
@@ -748,19 +828,18 @@ class Renderer:
                 sn = state.snapshots.get(key) or {}
                 lvl = int((sn.get("overall") or {}).get("level", 0) or 0)
                 return (sn.get("person") or {}).get("name", "Crew"), WORDS.get(lvl, ""), max(lvl, 0), key == state.current_person
-            rows = tuple(prow(k, payload) for k, payload in items)
-            w("c:list", left, (rows, cur), lambda: _list_card(S, nav, items, cur, prow, left, "Connect the iPhone app"))
+            self._list(S, nav, items, cur, prow, left, "Connect the iPhone app")
             if items:
                 sn = state.snapshots.get(items[cur][1]) or {}
                 w("c:pane", right, (items[cur][1], repr(sn.get("person")), repr(sn.get("overall")), repr(sn.get("mission")), repr(sn.get("alerts"))),
-                  lambda: _crew_pane(S, state, items[cur][1], right))
+                  lambda: _crew_pane(S, state, items[cur][1], right), cache=True)
             else:
                 w("c:pane", right, 0, lambda: S.panel(*right))
         elif page == "demo":
-            w("c:list", left, (cur, state.scenario), lambda: _list_card(S, nav, items, cur, lambda k, sc: (SCENARIO_LABELS[sc], "", 0, sc == state.scenario), left, ""))
+            self._list(S, nav, items, cur, lambda k, sc: (SCENARIO_LABELS[sc], "", 0, sc == state.scenario), left, "")
             if items:
                 sc = items[cur][1]
-                w("c:pane", right, (sc, state.scenario), lambda: _demo_pane(S, sc, state.scenario, right))
+                w("c:pane", right, (sc, state.scenario), lambda: _demo_pane(S, sc, state.scenario, right), cache=True)
             else:
                 w("c:pane", right, 0, lambda: S.panel(*right))
 

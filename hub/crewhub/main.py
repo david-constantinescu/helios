@@ -22,6 +22,7 @@ from typing import Any, Dict, Optional
 from . import environment as env
 from .display import HdmiDisplay, NullDisplay, OledDisplay, PngDisplay, TftDisplay
 from .pages import PAGES, Nav, handle, render
+from .deck import Deck
 from .hdmi_pages import Renderer as HdmiRenderer
 from .hdmi_pages import render as render_hdmi
 from .tft_pages import render as render_tft
@@ -105,6 +106,12 @@ class Hub:
         self.render = render_hdmi if wide else (render_tft if colour else render)
         self._last_key = None
         self._renderer = HdmiRenderer() if args.display == "hdmi" else None
+        self._deck = Deck() if args.display == "hdmi" else None
+        self._bg_busy = False
+        self._bg_t = 0.0
+        self._joy_t: Optional[float] = None
+        if args.display == "hdmi":
+            sys.setswitchinterval(0.001)                  # let the serial and network threads in between the renderer's bursts
         self._gen = -1
         self._warmed = False
         self.display = self._display()
@@ -165,6 +172,7 @@ class Hub:
             await self.server.send_frame()
         elif isinstance(msg, Joy):
             self.state.joy.update(count=self.state.joy["count"] + 1, last=msg.key, ts=time.time())
+            self._joy_t = time.time()
             await self.on_joystick(self.joy_map.get(msg.key, msg.key))
         self._dirty.set()
 
@@ -229,6 +237,7 @@ class Hub:
                     if self.display.generation != self._gen:                  # (re)opened: repaint everything
                         self._gen = self.display.generation
                         self._renderer = HdmiRenderer()
+                        self._deck = Deck()
                         self._last_key = None
                         self._warmed = False
                     size = self.display.size
@@ -236,6 +245,9 @@ class Hub:
                     if not self._warmed:                                      # build the glass tiles for every page once, off the main thread
                         self._warmed = True
                         asyncio.get_running_loop().run_in_executor(None, self._warm, size)
+                    if self._deck is not None and not self._bg_busy and now - self._bg_t > 1.0 and not self.nav.asleep:
+                        self._bg_busy, self._bg_t = True, now
+                        asyncio.get_running_loop().run_in_executor(None, self._background, size)
                     if key != self._last_key:
                         self._last_key = key
                         try:
@@ -252,9 +264,24 @@ class Hub:
                 pass
             self._dirty.clear()
 
+    def _background(self, size) -> None:
+        try:
+            fb = getattr(self.display, "fb", None)
+            if fb is not None:
+                self._deck.background(self.state, self.nav, size, time.time(), self.net, fb)
+        except Exception as e:  # noqa: BLE001 — only an optimisation
+            log.debug("background refresh: %s", e)
+        finally:
+            self._bg_busy = False
+
     def _warm(self, size) -> None:
         """Draws every page once into a scratch renderer so the first visit to each page is as fast as the next."""
         try:
+            fb = getattr(self.display, "fb", None)
+            if fb is not None and self._deck is not None:
+                self._bg_busy = True
+                self._deck.warm(self.state, self.nav, size, time.time() + 10, self.net, fb)
+                return
             r = HdmiRenderer()
             nav = Nav()
             for name in PAGES:
@@ -262,13 +289,28 @@ class Hub:
                 r.draw(self.state, nav, size, time.time() + 10, self.net)
         except Exception as e:  # noqa: BLE001 — warming is only an optimisation
             log.debug("warm-up skipped: %s", e)
+        finally:
+            self._bg_busy = False
 
     def _draw(self, now: float, size) -> None:
-        if self._renderer is not None:
+        fb = getattr(self.display, "fb", None)
+        if self._deck is not None and fb is not None:
+            try:
+                self._deck.draw_active(self.state, self.nav, size, now, self.net, fb)
+            except OSError as e:
+                log.warning("HDMI write failed (%s); reopening", e)
+                self.display.fb = None
+        elif self._renderer is not None:
             img, dirty = self._renderer.draw(self.state, self.nav, size, now, self.net)
             self.display.show(img, dirty)
         else:
             self.display.show(self.render(self.state, self.nav, size, now, self.net))
+        if self._joy_t is not None:                                   # stick → screen, as the hub measures it
+            ms = (time.time() - self._joy_t) * 1000
+            self._joy_t = None
+            j = self.state.joy
+            j["latency_ms"] = round(ms)
+            j["latency_avg_ms"] = round(ms if "latency_avg_ms" not in j else 0.8 * j["latency_avg_ms"] + 0.2 * ms)
 
     def _frame_key(self, now: float, size) -> tuple:
         """Everything that changes what the widescreen shows; the screen is redrawn only when this changes."""

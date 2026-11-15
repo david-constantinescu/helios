@@ -39,12 +39,22 @@ def read_fb_info(dev: str = "/dev/fb0") -> FbInfo:
     return FbInfo(w, h, bpp, stride)
 
 
+try:                                    # optional: makes the 16-bit conversion ~10x faster on a Pi (apt install python3-numpy)
+    import numpy as _np
+except Exception:  # noqa: BLE001
+    _np = None
+
+
 def pack(img: Image.Image, bpp: int) -> bytes:
     """RGB image → the framebuffer's byte order (little-endian XRGB8888 / BGR888 / RGB565)."""
     if bpp == 32:
         return img.tobytes("raw", "BGRX")
     if bpp == 24:
         return img.tobytes("raw", "BGR")
+    if bpp == 16 and _np is not None:
+        a = _np.asarray(img)
+        v = ((a[..., 0] & 0xF8).astype("<u2") << 8) | ((a[..., 1] & 0xFC).astype("<u2") << 3) | (a[..., 2] >> 3)
+        return v.tobytes()
     if bpp == 16:
         r, g, b = img.split()
         hi = ImageChops.add(r.point(lambda v: v & 0xF8), g.point(lambda v: v >> 5))
@@ -116,6 +126,29 @@ class FastFb:
             merged = [(0, 0, w, h)]
         self.shown = None
         return sum(self._write(img, b) for b in merged)
+
+    # --- pre-packed frames (the Deck keeps a ready-to-copy buffer per page) ---------------------------------------
+    def blit_all(self, packed) -> None:
+        """Copies a complete frame that is already in the framebuffer's pixel format — a few milliseconds."""
+        self.buf[:len(packed)] = packed
+        self.shown = None
+        self._first = False
+
+    def blit_rects(self, packed, boxes) -> int:
+        stride, px = self.info.stride, self.info.bpp // 8
+        mv = memoryview(packed)
+        n = 0
+        for x0, y0, x1, y1 in boxes:
+            a, b = x0 * px, x1 * px
+            if a == 0 and b == stride:
+                self.buf[y0 * stride:y1 * stride] = mv[y0 * stride:y1 * stride]
+            else:
+                for y in range(y0, y1):
+                    o = y * stride
+                    self.buf[o + a:o + b] = mv[o + a:o + b]
+            n += (b - a) * (y1 - y0)
+        self.shown = None
+        return n
 
     def clear(self) -> None:
         self.shown = None
