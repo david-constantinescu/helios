@@ -139,7 +139,7 @@ struct DemoPlayer: View {
             Image(systemName: "sparkles").font(.subheadline.weight(.semibold)).foregroundStyle(.cyan)
             VStack(alignment: .leading, spacing: 1) {
                 Text("Mission day \(sim.simDay + 1)").font(.subheadline.weight(.semibold))
-                Text(sim.autoPausedReason != nil ? "Paused for an alert" : (sim.running ? "Playing · \(sim.speed.label)" : "Demo mission"))
+                Text(sim.autoPausedReason != nil ? "Paused for an alert" : (sim.running ? "Playing · \(sim.speed.label)" : "Paused"))
                     .font(.caption).foregroundStyle(.secondary).lineLimit(1)
             }
             Spacer(minLength: 4)

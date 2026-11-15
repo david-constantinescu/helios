@@ -21,7 +21,7 @@ from typing import Any, Dict, Optional
 
 from . import environment as env
 from .display import HdmiDisplay, NullDisplay, OledDisplay, PngDisplay, TftDisplay
-from .pages import Nav, handle, render
+from .pages import PAGES, Nav, handle, render
 from .hdmi_pages import Renderer as HdmiRenderer
 from .hdmi_pages import render as render_hdmi
 from .tft_pages import render as render_tft
@@ -105,6 +105,7 @@ class Hub:
         self._last_key = None
         self._renderer = HdmiRenderer() if args.display == "hdmi" else None
         self._gen = -1
+        self._warmed = False
         self.display = self._display()
         self.net: Dict[str, Any] = {}
         self._dirty = asyncio.Event()
@@ -225,8 +226,12 @@ class Hub:
                         self._gen = self.display.generation
                         self._renderer = HdmiRenderer()
                         self._last_key = None
+                        self._warmed = False
                     size = self.display.size
                     key = self._frame_key(now, size)
+                    if not self._warmed:                                      # build the glass tiles for every page once, off the main thread
+                        self._warmed = True
+                        asyncio.get_running_loop().run_in_executor(None, self._warm, size)
                     if key != self._last_key:
                         self._last_key = key
                         try:
@@ -242,6 +247,17 @@ class Hub:
             except asyncio.TimeoutError:
                 pass
             self._dirty.clear()
+
+    def _warm(self, size) -> None:
+        """Draws every page once into a scratch renderer so the first visit to each page is as fast as the next."""
+        try:
+            r = HdmiRenderer()
+            nav = Nav()
+            for name in PAGES:
+                nav.go(name)
+                r.draw(self.state, nav, size, time.time() + 10, self.net)
+        except Exception as e:  # noqa: BLE001 — warming is only an optimisation
+            log.debug("warm-up skipped: %s", e)
 
     def _draw(self, now: float, size) -> None:
         if self._renderer is not None:

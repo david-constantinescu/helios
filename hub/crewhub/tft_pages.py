@@ -6,6 +6,7 @@ Pure: (hub state, navigation) → RGB PIL image, so every page can be previewed 
 from __future__ import annotations
 
 import os
+import threading
 import time
 from collections import OrderedDict
 from functools import lru_cache
@@ -72,19 +73,31 @@ _MASK_BYTES = [0]
 _MASK_LIMIT = 24 * 1024 * 1024
 
 
+_MASK_LOCK = threading.Lock()                          # the hub warms the cache in a worker thread while the screen is drawing
+
+
+def _size_of(v: Any) -> int:
+    first = v[0] if isinstance(v, tuple) else v
+    return first.size[0] * first.size[1] * (4 if isinstance(v, tuple) and first.mode == "RGB" else 1)
+
+
 def _cache_get(key: tuple):
-    v = _MASKS.get(key)
-    if v is not None:
-        _MASKS.move_to_end(key)
-    return v
+    with _MASK_LOCK:
+        v = _MASKS.get(key)
+        if v is not None:
+            _MASKS.move_to_end(key)
+        return v
 
 
 def _cache_put(key: tuple, value: Any, nbytes: int) -> None:
-    _MASKS[key] = value
-    _MASK_BYTES[0] += nbytes
-    while _MASK_BYTES[0] > _MASK_LIMIT and len(_MASKS) > 1:
-        _, old = _MASKS.popitem(last=False)
-        _MASK_BYTES[0] -= old[0].size[0] * old[0].size[1] if isinstance(old, tuple) else old.size[0] * old.size[1]
+    with _MASK_LOCK:
+        if key in _MASKS:
+            _MASK_BYTES[0] -= _size_of(_MASKS[key])
+        _MASKS[key] = value
+        _MASK_BYTES[0] += _size_of(value)
+        while _MASK_BYTES[0] > _MASK_LIMIT and len(_MASKS) > 1:
+            _, old = _MASKS.popitem(last=False)
+            _MASK_BYTES[0] -= _size_of(old)
 
 
 @lru_cache(maxsize=4096)

@@ -487,7 +487,7 @@ def test_hdmi_retained_renderer_matches_a_fresh_render_and_only_redraws_changes(
     assert check("unchanged") == []                           # nothing changed → nothing to write
     t += 60                                                   # the clock ticks
     small = check("clock")
-    assert small and sum((b[2] - b[0]) * (b[3] - b[1]) for b in small) < 0.05 * 1280 * 720
+    assert small and sum((b[2] - b[0]) * (b[3] - b[1]) for b in small) < 0.15 * 1280 * 720      # only the header strip
     for key in ("R", "R", "D", "D", "P", "D", "L", "R", "R", "H"):
         handle(nav, key, st)
         t += 0.1

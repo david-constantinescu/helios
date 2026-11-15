@@ -1,0 +1,509 @@
+[
+ {
+  "clip": "A02-health-connect",
+  "t": 2.5,
+  "type": "tap",
+  "x": 201,
+  "y": 670,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A02-health-connect",
+  "t": 7.82,
+  "type": "tap",
+  "x": 121,
+  "y": 429,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A02-health-connect",
+  "t": 10.07,
+  "type": "swipe",
+  "x": 200,
+  "y": 780,
+  "x2": 200,
+  "y2": 140,
+  "duration": 0.35,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A02-health-connect",
+  "t": 10.69,
+  "type": "swipe",
+  "x": 200,
+  "y": 780,
+  "x2": 200,
+  "y2": 140,
+  "duration": 0.35,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A02-health-connect",
+  "t": 11.32,
+  "type": "swipe",
+  "x": 200,
+  "y": 780,
+  "x2": 200,
+  "y2": 140,
+  "duration": 0.35,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A02-health-connect",
+  "t": 11.96,
+  "type": "swipe",
+  "x": 200,
+  "y": 780,
+  "x2": 200,
+  "y2": 140,
+  "duration": 0.35,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A02-health-connect",
+  "t": 12.59,
+  "type": "swipe",
+  "x": 200,
+  "y": 780,
+  "x2": 200,
+  "y2": 140,
+  "duration": 0.35,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A02-health-connect",
+  "t": 13.23,
+  "type": "swipe",
+  "x": 200,
+  "y": 780,
+  "x2": 200,
+  "y2": 140,
+  "duration": 0.35,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A02-health-connect",
+  "t": 13.86,
+  "type": "swipe",
+  "x": 200,
+  "y": 780,
+  "x2": 200,
+  "y2": 140,
+  "duration": 0.35,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A02-health-connect",
+  "t": 14.59,
+  "type": "swipe",
+  "x": 200,
+  "y": 780,
+  "x2": 200,
+  "y2": 140,
+  "duration": 0.35,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A02-health-connect",
+  "t": 15.22,
+  "type": "swipe",
+  "x": 200,
+  "y": 780,
+  "x2": 200,
+  "y2": 140,
+  "duration": 0.35,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A02-health-connect",
+  "t": 15.85,
+  "type": "swipe",
+  "x": 200,
+  "y": 780,
+  "x2": 200,
+  "y2": 140,
+  "duration": 0.35,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A02-health-connect",
+  "t": 16.49,
+  "type": "swipe",
+  "x": 200,
+  "y": 780,
+  "x2": 200,
+  "y2": 140,
+  "duration": 0.35,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A02-health-connect",
+  "t": 17.11,
+  "type": "swipe",
+  "x": 200,
+  "y": 780,
+  "x2": 200,
+  "y2": 140,
+  "duration": 0.35,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A02-health-connect",
+  "t": 17.73,
+  "type": "swipe",
+  "x": 200,
+  "y": 780,
+  "x2": 200,
+  "y2": 140,
+  "duration": 0.35,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A02-health-connect",
+  "t": 18.36,
+  "type": "swipe",
+  "x": 200,
+  "y": 780,
+  "x2": 200,
+  "y2": 140,
+  "duration": 0.35,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A02-health-connect",
+  "t": 18.99,
+  "type": "swipe",
+  "x": 200,
+  "y": 780,
+  "x2": 200,
+  "y2": 140,
+  "duration": 0.35,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A02-health-connect",
+  "t": 19.62,
+  "type": "swipe",
+  "x": 200,
+  "y": 780,
+  "x2": 200,
+  "y2": 140,
+  "duration": 0.35,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A02-health-connect",
+  "t": 20.25,
+  "type": "swipe",
+  "x": 200,
+  "y": 780,
+  "x2": 200,
+  "y2": 140,
+  "duration": 0.35,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A02-health-connect",
+  "t": 20.88,
+  "type": "swipe",
+  "x": 200,
+  "y": 780,
+  "x2": 200,
+  "y2": 140,
+  "duration": 0.35,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A02-health-connect",
+  "t": 21.52,
+  "type": "swipe",
+  "x": 200,
+  "y": 780,
+  "x2": 200,
+  "y2": 140,
+  "duration": 0.35,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A02-health-connect",
+  "t": 22.16,
+  "type": "swipe",
+  "x": 200,
+  "y": 780,
+  "x2": 200,
+  "y2": 140,
+  "duration": 0.35,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A02-health-connect",
+  "t": 22.79,
+  "type": "swipe",
+  "x": 200,
+  "y": 780,
+  "x2": 200,
+  "y2": 140,
+  "duration": 0.35,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A02-health-connect",
+  "t": 23.42,
+  "type": "swipe",
+  "x": 200,
+  "y": 780,
+  "x2": 200,
+  "y2": 140,
+  "duration": 0.35,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A02-health-connect",
+  "t": 24.04,
+  "type": "swipe",
+  "x": 200,
+  "y": 780,
+  "x2": 200,
+  "y2": 140,
+  "duration": 0.35,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A02-health-connect",
+  "t": 24.68,
+  "type": "swipe",
+  "x": 200,
+  "y": 780,
+  "x2": 200,
+  "y2": 140,
+  "duration": 0.35,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A02-health-connect",
+  "t": 25.31,
+  "type": "swipe",
+  "x": 200,
+  "y": 780,
+  "x2": 200,
+  "y2": 140,
+  "duration": 0.35,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A02-health-connect",
+  "t": 26.95,
+  "type": "tap",
+  "x": 201,
+  "y": 679,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A02-health-connect",
+  "t": 30.32,
+  "type": "tap",
+  "x": 201,
+  "y": 591,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A02-health-connect",
+  "t": 32.07,
+  "type": "tap",
+  "x": 201,
+  "y": 748,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A03-health-sync",
+  "t": 2.5,
+  "type": "tap",
+  "x": 146,
+  "y": 617,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A03-health-sync",
+  "t": 5.73,
+  "type": "swipe",
+  "x": 200,
+  "y": 700,
+  "x2": 200,
+  "y2": 380,
+  "duration": 1.2,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A03-health-sync",
+  "t": 9.2,
+  "type": "swipe",
+  "x": 200,
+  "y": 700,
+  "x2": 200,
+  "y2": 380,
+  "duration": 1.2,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A03-health-sync",
+  "t": 13.14,
+  "type": "swipe",
+  "x": 200,
+  "y": 380,
+  "x2": 200,
+  "y2": 700,
+  "duration": 1.2,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A03-health-sync",
+  "t": 15.59,
+  "type": "swipe",
+  "x": 200,
+  "y": 380,
+  "x2": 200,
+  "y2": 700,
+  "duration": 1.2,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ }
+]
