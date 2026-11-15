@@ -77,6 +77,10 @@ else
   echo "no screen attached; the start-up logo is skipped ($(cat /tmp/splash.info))"
 fi
 
+say "Quicker boot: nothing waits for the network, and services the hub does not use are off"
+sudo systemctl mask NetworkManager-wait-online.service >/dev/null 2>&1 || true
+sudo systemctl disable --now apt-daily.timer apt-daily-upgrade.timer man-db.timer ModemManager.service triggerhappy.service hciuart.service bluetooth.service >/dev/null 2>&1 || true
+
 say "Starting the service and advertising it on the network"
 sed "s/@USER@/$RUN_AS/g" "$HUB_DIR/deploy/crewhub.service" | sudo tee /etc/systemd/system/crewhub.service >/dev/null
 sudo cp "$HUB_DIR/deploy/crewhub.avahi.service" /etc/avahi/services/crewhub.service
