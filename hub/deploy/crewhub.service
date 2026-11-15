@@ -6,7 +6,7 @@ Wants=network-online.target
 [Service]
 User=@USER@
 Group=@USER@
-SupplementaryGroups=dialout i2c spi gpio
+SupplementaryGroups=dialout i2c spi gpio video
 WorkingDirectory=/opt/crewhub/app
 ExecStart=/opt/crewhub/venv/bin/python -m crewhub --config /etc/crewhub/config.json
 Restart=always

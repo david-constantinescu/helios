@@ -399,3 +399,146 @@ def test_tft_sleep_is_black_and_splash_shows_first():
     nav.asleep = False
     st.started = time.time()
     assert tft_render(st, nav, (160, 128), now=time.time()).getbbox() is not None
+
+
+# --- HDMI (framebuffer + widescreen pages) ----------------------------------------------------------------------
+
+def _fb(w=64, h=32, bpp=32, stride=None):
+    from crewhub.fb_fast import FastFb, FbInfo
+    stride = stride or w * bpp // 8
+    buf = bytearray(stride * h)
+    return FastFb(info=FbInfo(w, h, bpp, stride), buf=buf), buf
+
+
+def test_fb_pack_byte_orders():
+    from PIL import Image
+    from crewhub.fb_fast import pack
+    img = Image.new("RGB", (2, 1))
+    img.putdata([(255, 128, 0), (0, 64, 255)])
+    assert pack(img, 32) == bytes([0, 128, 255, 0, 255, 64, 0, 0])          # little-endian XRGB8888: B, G, R, X
+    assert pack(img, 24) == bytes([0, 128, 255, 255, 64, 0])
+    want = [((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3) for r, g, b in ((255, 128, 0), (0, 64, 255))]
+    assert pack(img, 16) == b"".join(v.to_bytes(2, "little") for v in want)
+
+
+def test_fb_delta_writes_only_the_changed_rectangle_at_the_right_offset():
+    from PIL import Image, ImageDraw
+    fb, buf = _fb(64, 32, 32, stride=64 * 4 + 32)            # padded rows, like a real framebuffer
+    img = Image.new("RGB", (64, 32))
+    assert fb.show(img) == 64 * 32 * 4 and fb.show(img) == 0
+    ImageDraw.Draw(img).rectangle([10, 5, 19, 9], fill=(200, 100, 50))
+    assert fb.show(img) == 10 * 5 * 4
+    off = 5 * fb.info.stride + 10 * 4
+    assert bytes(buf[off:off + 4]) == bytes([50, 100, 200, 0])
+    assert bytes(buf[off - 4:off]) == bytes(4)                # the neighbour pixel is untouched
+    assert bytes(buf[9 * fb.info.stride + 19 * 4: 9 * fb.info.stride + 19 * 4 + 4]) == bytes([50, 100, 200, 0])
+
+
+def test_fb_regions_merge_and_clamp():
+    from PIL import Image
+    fb, buf = _fb(100, 50)
+    img = Image.new("RGB", (100, 50), (1, 2, 3))
+    first = fb.show_regions(img, [(0, 0, 10, 10)])
+    assert first == 100 * 50 * 4                              # the first frame always paints everything
+    n = fb.show_regions(img, [(10, 10, 20, 20), (-5, -5, 3, 3), (90, 40, 140, 80)])
+    assert 0 < n < 100 * 50 * 4
+    assert fb.show_regions(img, []) == 0
+
+
+def _wide_state():
+    import sys
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "tools"))
+    from preview import sample_state
+    st = sample_state()
+    st.started = time.time() - 60
+    return st
+
+
+@pytest.mark.parametrize("size", [(1280, 720), (1920, 1080), (1920, 1200)])
+def test_hdmi_every_page_renders_at_any_resolution(size):
+    from crewhub.hdmi_pages import render as hd_render
+    st = _wide_state()
+    seen = set()
+    for name in PAGES:
+        nav = Nav()
+        nav.go(name)
+        img = hd_render(st, nav, size, now=time.time(), net={"token": "ABC123", "ip": "1.2.3.4", "public": "x.me"})
+        assert img.size == size and img.mode == "RGB" and img.getbbox() is not None, name
+        seen.add(img.tobytes())
+    assert len(seen) == len(PAGES)                            # every page looks different
+
+
+def test_hdmi_retained_renderer_matches_a_fresh_render_and_only_redraws_changes():
+    from crewhub.hdmi_pages import Renderer
+    st = _wide_state()
+    net = {"token": "ABC123", "ip": "1.2.3.4", "public": "x.me"}
+    size, t = (1280, 720), time.time()
+    rd = Renderer()
+    nav = Nav()
+
+    def check(label):
+        img, dirty = rd.draw(st, nav, size, t, net)
+        fresh, _ = Renderer().draw(st, nav, size, t, net)
+        assert img.tobytes() == fresh.tobytes(), label        # retained drawing never drifts from a from-scratch frame
+        return dirty
+
+    full = check("first")
+    assert full == [(0, 0, 1280, 720)]
+    assert check("unchanged") == []                           # nothing changed → nothing to write
+    t += 60                                                   # the clock ticks
+    small = check("clock")
+    assert small and sum((b[2] - b[0]) * (b[3] - b[1]) for b in small) < 0.05 * 1280 * 720
+    for key in ("R", "R", "D", "D", "P", "D", "L", "R", "R", "H"):
+        handle(nav, key, st)
+        t += 0.1
+        check("after " + key)
+    nav.toast = ("Radiation spike", t)
+    check("toast on")
+    t += 3
+    check("toast off")
+    nav.asleep = True
+    st.alerts = lambda: []
+    assert check("sleep") and rd.draw(st, nav, size, t, net)[0].getbbox() is None
+
+
+def test_hdmi_header_flashes_red_for_a_call_now_alert():
+    from crewhub.hdmi_pages import Renderer
+    st = _wide_state()
+    nav = Nav()
+    on, _ = Renderer().draw(st, nav, (1280, 720), now=1000.25, net={})
+    off, _ = Renderer().draw(st, nav, (1280, 720), now=1000.75, net={})
+    assert on.getpixel((400, 40)) != off.getpixel((400, 40))
+
+
+def test_hub_widescreen_loop_draws_changes_only(tmp_path, monkeypatch):
+    import crewhub.main as hub_main
+
+    class FakeHdmi:
+        size, fps, generation = (1280, 720), 30, 1
+
+        def __init__(self, **cfg):
+            self.frames = []
+
+        def ready(self):
+            return True
+
+        def show(self, img, dirty=None):
+            self.frames.append((img.size, dirty))
+
+        def off(self):
+            pass
+
+    monkeypatch.setattr(hub_main, "HdmiDisplay", FakeHdmi)
+    args = hub_main.parse_args(["--config", str(tmp_path / "none.json"), "--serial", "sim", "--display", "hdmi", "--db", str(tmp_path / "h.db"),
+                                "--token-file", str(tmp_path / "tok"), "--port", "0", "--host", "127.0.0.1", "--sim-speed", "20"])
+    hub = hub_main.Hub(args, {"hdmi": {}})
+
+    async def run():
+        try:
+            await asyncio.wait_for(hub.main(), 3.0)
+        except asyncio.TimeoutError:
+            pass
+    asyncio.run(run())
+    frames = hub.display.frames
+    assert frames and frames[0][0] == (1280, 720)
+    assert 2 <= len(frames) < 30 * 3                          # drawn when something changed, not on every 1/30 s tick

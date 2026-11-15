@@ -41,6 +41,9 @@ class _Lgpio:
     """Output pins through lgpio (the supported GPIO library on current Raspberry Pi OS)."""
 
     def __init__(self, pins: Sequence[int]):
+        import os
+        import tempfile
+        os.environ.setdefault("LG_WD", tempfile.gettempdir())     # lgpio creates its pipe files in the cwd, which the service can't write
         import lgpio
         self._l = lgpio
         self._h = lgpio.gpiochip_open(0)

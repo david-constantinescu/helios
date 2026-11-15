@@ -150,6 +150,16 @@ The pages are:
 New alerts bring the screen to the Alerts page. An unacknowledged "call" alert makes the header flash. The screen
 returns home after 3 minutes and turns off after 30 minutes, unless an alert is active.
 
+## HDMI display (1080p / 720p)
+
+`"display": "hdmi"` draws the same ten pages, laid out for a TV: a page rail on the left and, on list pages, the highlighted
+row's number and chart beside the list. It writes straight to the framebuffer (`/dev/fb0`) and only the rectangles that changed.
+
+* Resolution: `hdmi.mode` in `/etc/crewhub/config.json` (default `1920x1080@60`; use `1280x720@60` if the Pi Zero 2 W struggles).
+  The installer adds `video=HDMI-A-1:<mode>e` to `/boot/firmware/cmdline.txt` so the framebuffer exists even before a monitor is plugged in. Reboot after changing it.
+* Frame rate: `hdmi.fps` (default 30) is the tick of the draw loop. A frame is only drawn when something on screen changed.
+* Speed check on the Pi: `python3 tools/hdmi_bench.py` (memory only) or `--fb /dev/fb0` (real screen); previews: `python3 tools/preview_hdmi.py out_dir --size 1920x1080`.
+
 ## Fast screen updates
 
 The hub drives SSD1306 and SH1106 panels with its own driver (`crewhub/oled_fast.py`). For each frame it sends only

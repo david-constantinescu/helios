@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import os
 import time
+from collections import OrderedDict
 from functools import lru_cache
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
@@ -66,6 +67,31 @@ def metric_text(m: Dict[str, Any], value: Optional[float] = None) -> str:
     return num + ((unit if unit in ("%", "/5") else " " + unit) if unit else "")
 
 
+_MASKS: "OrderedDict[tuple, Any]" = OrderedDict()   # rendered glyph runs and anti-aliased shape masks, reused between frames
+_MASK_BYTES = [0]
+_MASK_LIMIT = 24 * 1024 * 1024
+
+
+def _cache_get(key: tuple):
+    v = _MASKS.get(key)
+    if v is not None:
+        _MASKS.move_to_end(key)
+    return v
+
+
+def _cache_put(key: tuple, value: Any, nbytes: int) -> None:
+    _MASKS[key] = value
+    _MASK_BYTES[0] += nbytes
+    while _MASK_BYTES[0] > _MASK_LIMIT and len(_MASKS) > 1:
+        _, old = _MASKS.popitem(last=False)
+        _MASK_BYTES[0] -= old[0].size[0] * old[0].size[1] if isinstance(old, tuple) else old.size[0] * old.size[1]
+
+
+@lru_cache(maxsize=4096)
+def _glen(weight: str, px: int, text: str) -> float:
+    return font(weight, px).getlength(text)
+
+
 def mix(a: Color, b: Color, t: float) -> Color:
     return (int(a[0] + (b[0] - a[0]) * t), int(a[1] + (b[1] - a[1]) * t), int(a[2] + (b[2] - a[2]) * t))
 
@@ -75,8 +101,10 @@ def clean(s: str) -> str:
 
 
 class Canvas:
-    def __init__(self, w: int, h: int):
+    def __init__(self, w: int, h: int, cache: bool = False):
         self.w, self.h = w, h
+        self._ss = SS
+        self.cache = cache                         # reuse rendered text and shapes between frames (the widescreen pages)
         self.img = Image.new("RGB", (w, h), BG)
         self.d = ImageDraw.Draw(self.img)
 
@@ -84,11 +112,24 @@ class Canvas:
     def text(self, x: float, y: float, s: str, px: int = 11, weight: str = "Regular", fill: Color = TEXT, anchor: str = "lm") -> float:
         s = clean(s)
         f = font(weight, px)
-        self.d.text((x, y), s, font=f, fill=fill, anchor=anchor)
-        return f.getlength(s)
+        if not self.cache:
+            self.d.text((x, y), s, font=f, fill=fill, anchor=anchor)
+            return f.getlength(s)
+        if not s:
+            return 0.0
+        key = ("t", s, weight, px, anchor)
+        hit = _cache_get(key)
+        if hit is None:
+            x0, y0, x1, y1 = f.getbbox(s, anchor=anchor)
+            m = Image.new("L", (max(1, x1 - x0 + 4), max(1, y1 - y0 + 4)), 0)
+            ImageDraw.Draw(m).text((2 - x0, 2 - y0), s, font=f, fill=255, anchor=anchor)
+            hit = (m, x0 - 2, y0 - 2)
+            _cache_put(key, hit, m.size[0] * m.size[1])
+        self.img.paste(fill, (int(round(x)) + hit[1], int(round(y)) + hit[2]), hit[0])
+        return _glen(weight, px, s)
 
     def width(self, s: str, px: int = 11, weight: str = "Regular") -> float:
-        return font(weight, px).getlength(clean(s))
+        return _glen(weight, px, clean(s))
 
     def fit(self, s: str, px: int, weight: str, maxw: float) -> str:
         s = clean(s)
@@ -122,52 +163,81 @@ class Canvas:
 
     # --- smooth shapes -----------------------------------------------------------------------------------------
     def _shape(self, box: Tuple[float, float, float, float], draw_fn: Callable[[ImageDraw.ImageDraw, float, float], None],
-               fill: Color, alpha: float = 1.0) -> None:
+               fill: Color, alpha: float = 1.0, key: Optional[tuple] = None) -> None:
         x0, y0, x1, y1 = box
         bx, by = int(x0) - 1, int(y0) - 1
         bw, bh = int(x1) + 2 - bx, int(y1) + 2 - by
-        m = Image.new("L", (bw * SS, bh * SS), 0)
-        draw_fn(ImageDraw.Draw(m), bx, by)
-        m = m.resize((bw, bh), Image.BOX)
-        if alpha < 1:
-            m = m.point(lambda v: int(v * alpha))
+        ck = (key, bx, by, bw, bh, alpha) if (key is not None and self.cache) else None
+        m = _cache_get(ck) if ck else None
+        if m is None:
+            area = bw * bh
+            self._ss = SS if (area <= 30000 or not self.cache) else (3 if area <= 150000 else 2)
+            m = Image.new("L", (bw * self._ss, bh * self._ss), 0)
+            draw_fn(ImageDraw.Draw(m), bx, by)
+            m = m.resize((bw, bh), Image.BOX)
+            if alpha < 1:
+                m = m.point(lambda v: int(v * alpha))
+            if ck:
+                _cache_put(ck, m, bw * bh)
         self.img.paste(fill, (bx, by), m)
 
     def rrect(self, box: Tuple[float, float, float, float], r: float, fill: Color, alpha: float = 1.0) -> None:
         x0, y0, x1, y1 = box
+        if alpha >= 1.0 and (x1 - x0) * (y1 - y0) > 6000 and r >= 3:        # big shape: corners only, the body is plain rectangles
+            ix0, iy0, ix1, iy1 = int(round(x0)), int(round(y0)), int(round(x1)), int(round(y1))
+            ri = max(1, min(int(round(r)), (ix1 - ix0) // 2, (iy1 - iy0) // 2))
+            if ix1 - ri - 1 >= ix0 + ri:
+                self.d.rectangle([ix0 + ri, iy0, ix1 - ri - 1, iy1 - 1], fill=fill)
+            if iy1 - ri - 1 >= iy0 + ri:
+                self.d.rectangle([ix0, iy0 + ri, ix1 - 1, iy1 - ri - 1], fill=fill)
+            disc = _cache_get(("disc", ri)) if self.cache else None
+            if disc is None:
+                disc = Image.new("L", (2 * ri * SS, 2 * ri * SS), 0)
+                ImageDraw.Draw(disc).ellipse([0, 0, 2 * ri * SS - 1, 2 * ri * SS - 1], fill=255)
+                disc = disc.resize((2 * ri, 2 * ri), Image.BOX)
+                if self.cache:
+                    _cache_put(("disc", ri), disc, 4 * ri * ri)
+            for qx, qy, dx, dy in ((0, 0, ix0, iy0), (ri, 0, ix1 - ri, iy0), (0, ri, ix0, iy1 - ri), (ri, ri, ix1 - ri, iy1 - ri)):
+                self.img.paste(fill, (dx, dy), disc.crop((qx, qy, qx + ri, qy + ri)))
+            return
         self._shape(box, lambda d, bx, by: d.rounded_rectangle(
-            [(x0 - bx) * SS, (y0 - by) * SS, (x1 - bx) * SS - 1, (y1 - by) * SS - 1], r * SS, fill=255), fill, alpha)
+            [(x0 - bx) * self._ss, (y0 - by) * self._ss, (x1 - bx) * self._ss - 1, (y1 - by) * self._ss - 1], r * self._ss, fill=255), fill, alpha,
+            key=("rr", round(x0, 2), round(y0, 2), round(x1, 2), round(y1, 2), round(r, 2)))
 
     def dot(self, cx: float, cy: float, r: float, fill: Color, alpha: float = 1.0) -> None:
         self._shape((cx - r, cy - r, cx + r, cy + r), lambda d, bx, by: d.ellipse(
-            [(cx - r - bx) * SS, (cy - r - by) * SS, (cx + r - bx) * SS - 1, (cy + r - by) * SS - 1], fill=255), fill, alpha)
+            [(cx - r - bx) * self._ss, (cy - r - by) * self._ss, (cx + r - bx) * self._ss - 1, (cy + r - by) * self._ss - 1], fill=255), fill, alpha,
+            key=("dot", round(cx, 2), round(cy, 2), round(r, 2)))
 
     def ring(self, cx: float, cy: float, r: float, thick: float, frac: float, fill: Color, track: Optional[Color] = SEP) -> None:
         def arc(color_frac: float):
             def fn(d, bx, by):
-                box = [(cx - r - bx) * SS, (cy - r - by) * SS, (cx + r - bx) * SS, (cy + r - by) * SS]
+                box = [(cx - r - bx) * self._ss, (cy - r - by) * self._ss, (cx + r - bx) * self._ss, (cy + r - by) * self._ss]
                 if color_frac >= 0.999:
-                    d.ellipse(box, outline=255, width=int(thick * SS))
+                    d.ellipse(box, outline=255, width=int(thick * self._ss))
                 else:
-                    d.arc(box, -90, -90 + 360 * color_frac, fill=255, width=int(thick * SS))
+                    d.arc(box, -90, -90 + 360 * color_frac, fill=255, width=int(thick * self._ss))
             return fn
         bounds = (cx - r - 1, cy - r - 1, cx + r + 1, cy + r + 1)
+        rk = (round(cx, 2), round(cy, 2), round(r, 2), round(thick, 2))
         if track:
-            self._shape(bounds, arc(1.0), track)
-        self._shape(bounds, arc(frac), fill)
+            self._shape(bounds, arc(1.0), track, key=("ring",) + rk + (1.0,))
+        self._shape(bounds, arc(frac), fill, key=("ring",) + rk + (round(frac, 3),))
 
     def poly(self, pts: List[Tuple[float, float]], fill: Color, width: float = 1.6, alpha: float = 1.0) -> None:
         xs, ys = [p[0] for p in pts], [p[1] for p in pts]
         box = (min(xs) - width, min(ys) - width, max(xs) + width, max(ys) + width)
-        self._shape(box, lambda d, bx, by: d.line([((x - bx) * SS, (y - by) * SS) for x, y in pts], fill=255,
-                                                   width=max(1, int(width * SS)), joint="curve"), fill, alpha)
+        self._shape(box, lambda d, bx, by: d.line([((x - bx) * self._ss, (y - by) * self._ss) for x, y in pts], fill=255,
+                                                   width=max(1, int(width * self._ss)), joint="curve"), fill, alpha,
+                    key=("poly", tuple((round(x, 1), round(y, 1)) for x, y in pts), round(width, 2)))
 
-    def chart(self, box: Tuple[int, int, int, int], values: List[Optional[float]], color: Color, ref: Optional[float] = None) -> None:
+    def chart(self, box: Tuple[int, int, int, int], values: List[Optional[float]], color: Color, ref: Optional[float] = None,
+              lw: float = 1.7, dot: float = 2.4, dash: int = 4, msg_px: int = 9) -> Optional[Tuple[float, float]]:
         """Line with a soft fill under it and a dashed 'your usual' line, like the app's trend charts."""
         x0, y0, x1, y1 = box
         vals = [v for v in values if v is not None]
         if len(vals) < 2:
-            self.text((x0 + x1) / 2, (y0 + y1) / 2, "Not enough data yet", 9, "Medium", FAINT, "mm")
+            self.text((x0 + x1) / 2, (y0 + y1) / 2, "Not enough data yet", msg_px, "Medium", FAINT, "mm")
             return
         if len(vals) > 72:                                           # raw 1 s sensor data: average into ~60 buckets
             step = len(vals) / 60.0
@@ -175,6 +245,7 @@ class Canvas:
                     for i in range(60)]
         pool = vals + ([ref] if ref is not None else [])
         lo, hi = min(pool), max(pool)
+        dmin, dmax = lo, hi
         if hi - lo < 1e-9:
             lo, hi = lo - 1, hi + 1
         span = (hi - lo) * 1.12
@@ -186,13 +257,14 @@ class Canvas:
         pts = [(x0 + i * (x1 - x0) / (n - 1), py(v)) for i, v in enumerate(vals)]
         if ref is not None:
             yr = py(ref)
-            for x in range(x0, x1, 4):
-                self.d.line([(x, yr), (x + 1, yr)], fill=FAINT)
+            for x in range(x0, x1, dash * 2):
+                self.d.line([(x, yr), (x + dash, yr)], fill=FAINT, width=max(1, int(lw / 2)))
         self._shape((x0, y0, x1, y1 + 1), lambda d, bx, by: d.polygon(
-            [((x - bx) * SS, (y - by) * SS) for x, y in pts] + [((x1 - bx) * SS, (y1 + 1 - by) * SS), ((x0 - bx) * SS, (y1 + 1 - by) * SS)],
-            fill=255), color, alpha=0.20)
-        self.poly(pts, color, 1.7)
-        self.dot(pts[-1][0], pts[-1][1], 2.4, color)
+            [((x - bx) * self._ss, (y - by) * self._ss) for x, y in pts] + [((x1 - bx) * self._ss, (y1 + 1 - by) * self._ss), ((x0 - bx) * self._ss, (y1 + 1 - by) * self._ss)],
+            fill=255), color, alpha=0.20, key=("area", tuple((round(x, 1), round(y, 1)) for x, y in pts), x1, y1))
+        self.poly(pts, color, lw)
+        self.dot(pts[-1][0], pts[-1][1], dot, color)
+        return (dmin, dmax)
 
     def check(self, cx: float, cy: float, s: float, fill: Color, width: float = 2.2) -> None:
         self.poly([(cx - s * .55, cy + s * .02), (cx - s * .12, cy + s * .45), (cx + s * .6, cy - s * .4)], fill, width)

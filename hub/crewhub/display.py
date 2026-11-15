@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 import os
+import time
 from typing import Optional
 
 from PIL import Image
@@ -77,6 +78,75 @@ class TftDisplay:
 
     def off(self) -> None:
         self.tft.off()
+
+
+class HdmiDisplay:
+    """HDMI through /dev/fb0 (see fb_fast.py). Waits for the framebuffer if it isn't there yet and follows mode changes, so
+    plugging the monitor in (or swapping it) later just works."""
+
+    def __init__(self, dev: str = "/dev/fb0", fps: int = 30, **_ignored):
+        self.dev, self.fps = dev, max(1, int(fps))
+        self.fb = None
+        self.size = (1920, 1080)
+        self._retry = 0.0
+        self._checked = 0.0
+        self.generation = 0                      # bumps whenever the framebuffer is (re)opened: the renderer must repaint everything
+        self._open()
+
+    def _open(self) -> bool:
+        from .fb_fast import FastFb
+        try:
+            self.fb = FastFb(self.dev)
+            self.size = self.fb.size
+            self.generation += 1
+            log.info("HDMI framebuffer %s: %dx%d %d bpp", self.dev, *self.fb.size, self.fb.info.bpp)
+            return True
+        except (OSError, ValueError) as e:
+            self.fb = None
+            log.debug("HDMI framebuffer not ready: %s", e)
+            return False
+
+    def ready(self) -> bool:
+        now = time.time()
+        if self.fb is None:
+            if now >= self._retry:
+                self._retry = now + 3.0
+                self._open()
+        elif now - self._checked > 3.0:                      # the monitor may have changed mode
+            self._checked = now
+            from .fb_fast import read_fb_info
+            try:
+                info = read_fb_info(self.dev)
+            except (OSError, ValueError):
+                info = None
+            if info is None or info != self.fb.info:
+                self.fb.close()
+                self.fb = None
+                self._open()
+        return self.fb is not None
+
+    def show(self, img: Image.Image, dirty=None) -> None:
+        if not self.ready():
+            return
+        try:
+            if dirty is not None:
+                self.fb.show_regions(img, dirty)
+            else:
+                self.fb.show(img)
+        except (OSError, ValueError) as e:
+            log.warning("HDMI write failed (%s); reopening", e)
+            self.fb = None
+
+    def contrast(self, level: int) -> None:
+        pass
+
+    def off(self) -> None:
+        if self.fb is not None:
+            try:
+                self.fb.clear()
+                self.fb.close()
+            except (OSError, ValueError):
+                pass
 
 
 class PngDisplay:

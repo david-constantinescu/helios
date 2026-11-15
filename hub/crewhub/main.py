@@ -20,8 +20,10 @@ import time
 from typing import Any, Dict, Optional
 
 from . import environment as env
-from .display import NullDisplay, OledDisplay, PngDisplay, TftDisplay
+from .display import HdmiDisplay, NullDisplay, OledDisplay, PngDisplay, TftDisplay
 from .pages import Nav, handle, render
+from .hdmi_pages import Renderer as HdmiRenderer
+from .hdmi_pages import render as render_hdmi
 from .tft_pages import render as render_tft
 from .protocol import SCENARIOS, Frame, Hello, Joy, Message, command
 from .serial_link import FakeUno, SerialLink
@@ -93,9 +95,16 @@ class Hub:
             self.server.on_joystick = self._remote_joystick
         self.server.screen = lambda: {"page": self.nav.name, "detail": self.nav.detail, "asleep": self.nav.asleep}
         colour = args.display in ("tft", "tft-png")
+        wide = args.display in ("hdmi", "hdmi-png")
         t = cfg.get("tft") or {}
+        hd = cfg.get("hdmi") or {}
         self.size = (int(t.get("width", 160)), int(t.get("height", 128))) if colour else (args.width, args.height)
-        self.render = render_tft if colour else render
+        if wide:
+            self.size = (int(hd.get("width", 1920)), int(hd.get("height", 1080)))
+        self.render = render_hdmi if wide else (render_tft if colour else render)
+        self._last_key = None
+        self._renderer = HdmiRenderer() if args.display == "hdmi" else None
+        self._gen = -1
         self.display = self._display()
         self.net: Dict[str, Any] = {}
         self._dirty = asyncio.Event()
@@ -106,6 +115,14 @@ class Hub:
             return PngDisplay(a.png_dir)
         if a.display == "tft-png":
             return PngDisplay(a.png_dir, scale=3)
+        if a.display == "hdmi-png":
+            return PngDisplay(a.png_dir, scale=1)
+        if a.display == "hdmi":
+            try:
+                return HdmiDisplay(**(self.cfg.get("hdmi") or {}))
+            except Exception as e:  # noqa: BLE001 — keep serving the app even without a screen
+                log.error("HDMI not available (%s); continuing without a display", e)
+                return NullDisplay()
         if a.display == "none":
             return NullDisplay()
         if a.display == "tft":
@@ -198,13 +215,50 @@ class Hub:
                 self.nav.go("home")
             if idle > self.args.sleep_after and not self.state.alerts():
                 self.nav.asleep = True
-            self.display.show(self.render(self.state, self.nav, self.size, now, self.net))
+            timeout = 0.25
+            if isinstance(self.display, HdmiDisplay):
+                # Widescreen: a frame is drawn (in a worker thread) only when something on screen changed, then only the
+                # changed rectangle is written. The loop itself ticks at the target frame rate.
+                timeout = 1.0 / self.display.fps
+                if self.display.ready():
+                    if self.display.generation != self._gen:                  # (re)opened: repaint everything
+                        self._gen = self.display.generation
+                        self._renderer = HdmiRenderer()
+                        self._last_key = None
+                    size = self.display.size
+                    key = self._frame_key(now, size)
+                    if key != self._last_key:
+                        self._last_key = key
+                        try:
+                            await asyncio.get_running_loop().run_in_executor(None, self._draw, now, size)
+                        except RuntimeError as e:            # the state changed under the renderer; draw again next tick
+                            log.debug("redraw: %s", e)
+                            self._last_key = None
+            else:
+                self.display.show(self.render(self.state, self.nav, self.size, now, self.net))
             try:
                 # Joystick and data changes wake this at once; otherwise refresh for the clock and blinking.
-                await asyncio.wait_for(self._dirty.wait(), timeout=0.25)
+                await asyncio.wait_for(self._dirty.wait(), timeout=timeout)
             except asyncio.TimeoutError:
                 pass
             self._dirty.clear()
+
+    def _draw(self, now: float, size) -> None:
+        if self._renderer is not None:
+            img, dirty = self._renderer.draw(self.state, self.nav, size, now, self.net)
+            self.display.show(img, dirty)
+        else:
+            self.display.show(self.render(self.state, self.nav, size, now, self.net))
+
+    def _frame_key(self, now: float, size) -> tuple:
+        """Everything that changes what the widescreen shows; the screen is redrawn only when this changes."""
+        alerts = self.state.alerts()
+        critical = bool(alerts) and max(a.level for a in alerts) >= 3
+        nav = self.nav
+        toast = nav.toast[0] if nav.toast and now - nav.toast[1] < 2.0 else None
+        return (self.state.version, size, nav.page, nav.detail, tuple(sorted(nav.cursor.items())), nav.asleep, toast,
+                int(now * 2) % 2 if critical else 0, int(now // 60), now - self.state.started < 3.0,
+                int(now) if now - self.state.started < 3.0 else 0, self.net.get("token"), self.net.get("records", 0) // 100)
 
     async def housekeeping(self) -> None:
         while True:
@@ -245,7 +299,7 @@ def parse_args(argv=None) -> argparse.Namespace:
     p.add_argument("--name", default=cfg.get("name", "Helios Hub"))
     p.add_argument("--serial", default=cfg.get("serial", "auto"), help="auto | sim | /dev/ttyACM0")
     p.add_argument("--sim-speed", type=float, default=1.0, help="sim only: scenario time multiplier")
-    p.add_argument("--display", default=cfg.get("display", "oled"), choices=["oled", "tft", "png", "tft-png", "none"])
+    p.add_argument("--display", default=cfg.get("display", "oled"), choices=["oled", "tft", "hdmi", "png", "tft-png", "hdmi-png", "none"])
     p.add_argument("--oled", default=o.get("driver", "ssd1306"), choices=["ssd1306", "sh1106", "ssd1309"])
     p.add_argument("--width", type=int, default=o.get("width", 128))
     p.add_argument("--height", type=int, default=o.get("height", 64), choices=[32, 64])

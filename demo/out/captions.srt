@@ -1,0 +1,94 @@
+1
+00:00:00,800 --> 00:00:04,600
+Mars is 3–22 light-minutes away.
+
+2
+00:00:04,600 --> 00:00:08,000
+Each way.
+
+3
+00:00:08,300 --> 00:00:14,000
+Nobody can phone a flight surgeon.
+
+4
+00:00:15,200 --> 00:00:22,000
+Crew Health Hub
+
+5
+00:00:16,600 --> 00:00:22,000
+Your own flight surgeon, when Earth is too far to call.
+
+6
+00:00:22,800 --> 00:00:32,000
+Your health, at a glance.
+
+7
+00:00:32,600 --> 00:00:46,000
+Always in sync with Apple Health.
+
+8
+00:00:34,200 --> 00:00:46,000
+Not just once. Continuously.
+
+9
+00:00:38,000 --> 00:00:46,000
+LIVE
+
+10
+00:00:46,600 --> 00:00:58,000
+Compared with you.
+
+11
+00:00:48,000 --> 00:00:58,000
+Not a textbook.
+
+12
+00:00:58,600 --> 00:01:12,000
+See what changed. And why.
+
+13
+00:01:12,500 --> 00:01:20,000
+A one-minute daily check-in.
+
+14
+00:01:20,500 --> 00:01:30,000
+Five hazards. One view.
+
+15
+00:01:30,800 --> 00:01:38,000
+When it matters,
+
+16
+00:01:38,000 --> 00:01:46,000
+it escalates.
+
+17
+00:01:46,600 --> 00:01:56,000
+Clear steps. Who to call.
+
+18
+00:01:56,500 --> 00:02:04,000
+One page for the flight surgeon.
+
+19
+00:02:04,400 --> 00:02:10,000
+Offline-first. Your data stays on your device.
+
+20
+00:02:10,200 --> 00:02:15,000
+Honest by design.
+
+21
+00:02:15,100 --> 00:02:18,000
+NEXT
+
+22
+00:02:15,300 --> 00:02:18,000
+Next: habitat sensors · crew console · Mission Control
+
+23
+00:02:19,000 --> 00:02:24,000
+Crew Health Hub
+Your own flight surgeon, when Earth is too far to call.
+Built for the NASA Space Apps Challenge 2026
+Decision support only. Not a medical device.

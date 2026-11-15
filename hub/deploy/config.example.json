@@ -1,7 +1,14 @@
 {
   "name": "Helios Hub",
   "serial": "auto",
-  "display": "tft",
+  "display": "hdmi",
+  "hdmi": {
+    "dev": "/dev/fb0",
+    "fps": 30,
+    "width": 1920,
+    "height": 1080,
+    "mode": "1920x1080@60"
+  },
   "tft": {
     "width": 160,
     "height": 128,
