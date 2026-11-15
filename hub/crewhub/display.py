@@ -60,6 +60,25 @@ class OledDisplay:
             self.device.hide()
 
 
+class TftDisplay:
+    """Adafruit 1.8" colour TFT (ST7735R) on SPI: only the changed rectangle of each frame is sent (see tft_fast.py)."""
+
+    def __init__(self, **cfg):
+        from .tft_fast import FastTft
+        keys = ("width", "height", "rotate", "spi_bus", "spi_device", "dc", "rst", "speed_hz", "bgr", "invert", "col_offset", "row_offset")
+        self.tft = FastTft(**{k: cfg[k] for k in keys if k in cfg})
+        self.size = (self.tft.w, self.tft.h)
+
+    def show(self, img: Image.Image) -> None:
+        self.tft.show(img)
+
+    def contrast(self, level: int) -> None:
+        pass
+
+    def off(self) -> None:
+        self.tft.off()
+
+
 class PngDisplay:
     """Writes the current frame to <dir>/oled.png (scaled up, white on black like the panel)."""
 
@@ -73,7 +92,7 @@ class PngDisplay:
         if data == self._last:
             return
         self._last = data
-        big = img.convert("L").resize((img.width * self.scale, img.height * self.scale), Image.NEAREST)
+        big = img.convert("RGB" if img.mode == "RGB" else "L").resize((img.width * self.scale, img.height * self.scale), Image.NEAREST)
         tmp = os.path.join(self.dir, ".oled.png")
         big.save(tmp)
         os.replace(tmp, os.path.join(self.dir, "oled.png"))

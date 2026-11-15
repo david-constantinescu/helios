@@ -293,3 +293,109 @@ def test_web_app_is_served_and_push_subscription_needs_code():
                     msg = json.loads(await ws.recv())
                 assert msg["ok"] is False
     run(body())
+
+
+# --- colour TFT -------------------------------------------------------------------------------------------------
+
+class _Spi:
+    def __init__(self):
+        self.writes = []
+
+    def writebytes2(self, data):
+        self.writes.append(bytes(data))
+
+    def close(self):
+        pass
+
+
+class _Gpio:
+    def __init__(self):
+        self.levels = {}
+
+    def write(self, pin, level):
+        self.levels[pin] = level
+
+
+def test_rgb565_matches_reference():
+    from PIL import Image
+    from crewhub.tft_fast import to_rgb565
+    cols = [(0, 0, 0), (255, 255, 255), (255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 214, 10), (10, 132, 255), (152, 152, 157)]
+    img = Image.new("RGB", (len(cols), 1))
+    img.putdata(cols)
+    got = to_rgb565(img)
+    want = b"".join((((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3)).to_bytes(2, "big") for r, g, b in cols)
+    assert got == want
+
+
+def test_tft_sends_only_the_changed_rectangle():
+    from PIL import Image, ImageDraw
+    from crewhub.tft_fast import FastTft
+    spi, gpio = _Spi(), _Gpio()
+    tft = FastTft(spi=spi, gpio=gpio, sleep=lambda s: None)
+    assert tft.bytes_sent > 160 * 128 * 2                     # init + one full black frame
+    img = Image.new("RGB", (160, 128))
+    assert tft.show(img) == 0                                 # identical frame → nothing on the bus
+    ImageDraw.Draw(img).rectangle([10, 20, 29, 29], fill=(255, 0, 0))
+    sent = tft.show(img)
+    assert sent == 5 + 5 + 1 + 20 * 10 * 2 + 1 + 4 + 4 + 0 or sent < 700    # window commands + 200 pixels, not the whole frame
+    assert sent < 800
+    assert gpio.levels[25] == 1                               # D/C high for pixel data
+
+
+def test_tft_rotation_and_offsets_are_applied():
+    from crewhub.tft_fast import BGR, FastTft, MV, MY
+    spi = _Spi()
+    FastTft(spi=spi, gpio=_Gpio(), rotate=1, bgr=True, col_offset=2, row_offset=1, sleep=lambda s: None)
+    assert bytes([MY | MV | BGR]) in spi.writes
+    assert bytes([0, 2, 0, 161]) in spi.writes                # CASET: 0+2 … 159+2
+    assert bytes([0, 1, 0, 128]) in spi.writes                # RASET: 0+1 … 127+1
+
+
+def _tft_frames(spike=False):
+    from crewhub.tft_pages import render as tft_render
+    import sys
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "tools"))
+    from preview import sample_state
+    st = sample_state(spike)
+    st.started = time.time() - 60
+    out = {}
+    for name in PAGES:
+        nav = Nav()
+        nav.go(name)
+        out[name] = tft_render(st, nav, (160, 128), now=time.time(), net={"token": "ABC123", "ip": "1.2.3.4"})
+    return st, out
+
+
+def test_tft_every_page_renders_in_colour():
+    st, frames = _tft_frames()
+    for name, img in frames.items():
+        assert img.size == (160, 128) and img.mode == "RGB", name
+        assert img.getbbox() is not None, name              # not blank
+    assert frames["home"].tobytes() != frames["alerts"].tobytes()
+
+
+def test_tft_lists_scroll_with_the_cursor_and_details_render():
+    from crewhub.tft_pages import render as tft_render
+    st, _ = _tft_frames()
+    nav = Nav()
+    nav.go("health")
+    first = tft_render(st, nav, (160, 128)).tobytes()
+    for _ in range(12):
+        handle(nav, "D", st)
+    moved = tft_render(st, nav, (160, 128)).tobytes()
+    assert nav.top["health"] > 0
+    assert moved != first
+    nav.detail = "heart_rate_resting"
+    assert tft_render(st, nav, (160, 128)).getbbox() is not None
+
+
+def test_tft_sleep_is_black_and_splash_shows_first():
+    from crewhub.tft_pages import render as tft_render
+    st, _ = _tft_frames()
+    nav = Nav()
+    nav.asleep = True
+    st.alerts = lambda: []
+    assert tft_render(st, nav, (160, 128)).getbbox() is None
+    nav.asleep = False
+    st.started = time.time()
+    assert tft_render(st, nav, (160, 128), now=time.time()).getbbox() is not None

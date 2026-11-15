@@ -1,7 +1,21 @@
 {
   "name": "Helios Hub",
   "serial": "auto",
-  "display": "oled",
+  "display": "tft",
+  "tft": {
+    "width": 160,
+    "height": 128,
+    "rotate": 1,
+    "spi_bus": 0,
+    "spi_device": 0,
+    "dc": 25,
+    "rst": 24,
+    "speed_hz": 16000000,
+    "bgr": true,
+    "invert": false,
+    "col_offset": 0,
+    "row_offset": 0
+  },
   "oled": {
     "driver": "ssd1306",
     "width": 128,

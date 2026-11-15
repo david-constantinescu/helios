@@ -9,15 +9,15 @@ say() { printf '\n\033[1m%s\033[0m\n' "$*"; }
 
 say "Installing system packages"
 sudo apt-get update -qq
-sudo apt-get install -y -qq python3-venv python3-pip python3-pil python3-serial python3-cryptography i2c-tools avahi-daemon rsync curl
+sudo apt-get install -y -qq python3-venv python3-pip python3-pil python3-serial python3-cryptography python3-spidev python3-lgpio i2c-tools avahi-daemon rsync curl
 
-say "Enabling I2C (OLED) at 1 MHz"
-if command -v raspi-config >/dev/null; then sudo raspi-config nonint do_i2c 0; fi
+say "Enabling SPI (colour TFT) and I2C (optional OLED)"
+if command -v raspi-config >/dev/null; then sudo raspi-config nonint do_i2c 0; sudo raspi-config nonint do_spi 0; fi
 BOOTCFG=/boot/firmware/config.txt; [ -f "$BOOTCFG" ] || BOOTCFG=/boot/config.txt
 if [ -f "$BOOTCFG" ] && ! grep -q '^dtparam=i2c_arm_baudrate' "$BOOTCFG"; then
   echo 'dtparam=i2c_arm_baudrate=1000000' | sudo tee -a "$BOOTCFG" >/dev/null
 fi
-sudo usermod -aG dialout,i2c "$RUN_AS"
+sudo usermod -aG dialout,i2c,spi,gpio "$RUN_AS"
 
 if [ "${KEEP_HOSTNAME:-0}" != "1" ] && [ "$(hostname)" != "helios" ] && command -v raspi-config >/dev/null; then
   say "Setting the hostname to helios (the app looks for helios.local; KEEP_HOSTNAME=1 to skip)"
@@ -31,6 +31,15 @@ sudo rsync -a --delete --exclude tests --exclude '__pycache__' --exclude 'oled-p
 sudo /opt/crewhub/venv/bin/pip install -q --upgrade pip
 sudo /opt/crewhub/venv/bin/pip install -q -r /opt/crewhub/app/requirements.txt
 [ -f /etc/crewhub/config.json ] || sudo cp "$HUB_DIR/deploy/config.example.json" /etc/crewhub/config.json
+# An older config (OLED) gets the colour-screen settings added and switched on; existing values are kept otherwise.
+sudo python3 - "$HUB_DIR/deploy/config.example.json" <<'PY'
+import json, sys
+new = json.load(open(sys.argv[1])); path = "/etc/crewhub/config.json"
+cur = json.load(open(path))
+if "tft" not in cur:
+    cur["tft"] = new["tft"]; cur["display"] = "tft"
+    json.dump(cur, open(path, "w"), indent=2); print("Config: colour TFT enabled")
+PY
 sudo chown -R "$RUN_AS:$RUN_AS" /var/lib/crewhub
 
 say "Starting the service and advertising it on the network"

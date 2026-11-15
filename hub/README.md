@@ -1,4 +1,4 @@
-# Helios Hub — Raspberry Pi Zero WH + Arduino Uno + Adafruit OLED
+# Helios Hub — Raspberry Pi Zero + Arduino Uno + colour TFT (or OLED)
 
 The hub is the centre of the habitat. It runs entirely on the Pi:
 
@@ -30,7 +30,39 @@ The hub is the centre of the habitat. It runs entirely on the Pi:
 **Uno → Pi.** Use a USB cable from the Uno into the Pi Zero's **USB** port (the inner one, not PWR) through a
 micro-USB OTG adapter. The Uno shows up as `/dev/ttyACM0` and is powered by the Pi.
 
-**OLED → Pi (I2C).** Power the OLED from **3.3 V**, not 5 V.
+**Colour screen → Pi (SPI)** — the Adafruit 1.8" TFT (ST7735R, 160×128). Power it from **3.3 V**.
+
+| TFT pin | Pi pin | GPIO |
+|---|---|---|
+| VCC | 17 (3.3 V) | – |
+| GND | 20 | – |
+| SCK | 23 | 11 |
+| MOSI | 19 | 10 |
+| MISO | 21 (optional) | 9 |
+| TFT_CS | 24 | 8 (CE0) |
+| D/C | 22 | 25 |
+| RESET | 18 | 24 |
+| LITE (backlight) | 1 (3.3 V) | – |
+| CARD_CS | leave empty | – |
+
+Pins 18/20/22/24 and 17/19/21/23 are two straight runs of four on the header. SPI is turned on by the installer.
+
+If the first picture is wrong, stop the hub and run the labelled test pattern — every symptom is one config setting
+under `tft` in `/etc/crewhub/config.json`:
+
+```bash
+sudo systemctl stop crewhub && python3 -m crewhub.tft_check --hold 60 --bgr 0     # try --invert 1, --rotate 3, --col-offset 2 --row-offset 1
+```
+
+| Symptom | Setting |
+|---|---|
+| Red and blue swapped | `bgr` true ↔ false |
+| Black and white swapped | `invert` |
+| Upside down / mirrored | `rotate` 1 ↔ 3 |
+| 1–2 px junk line on one edge | `col_offset` / `row_offset` (green-tab boards: 1 and 2) |
+| Garbage or black screen | lower `speed_hz` (8000000) and check the wires |
+
+**OLED → Pi (I2C).** Optional alternative (`"display": "oled"`). Power the OLED from **3.3 V**, not 5 V.
 
 | Adafruit OLED | Pi Zero header |
 |---|---|

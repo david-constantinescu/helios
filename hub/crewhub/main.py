@@ -20,8 +20,9 @@ import time
 from typing import Any, Dict, Optional
 
 from . import environment as env
-from .display import NullDisplay, OledDisplay, PngDisplay
+from .display import NullDisplay, OledDisplay, PngDisplay, TftDisplay
 from .pages import Nav, handle, render
+from .tft_pages import render as render_tft
 from .protocol import SCENARIOS, Frame, Hello, Joy, Message, command
 from .serial_link import FakeUno, SerialLink
 from .server import HubServer
@@ -91,6 +92,10 @@ class Hub:
         if args.serial == "sim":
             self.server.on_joystick = self._remote_joystick
         self.server.screen = lambda: {"page": self.nav.name, "detail": self.nav.detail, "asleep": self.nav.asleep}
+        colour = args.display in ("tft", "tft-png")
+        t = cfg.get("tft") or {}
+        self.size = (int(t.get("width", 160)), int(t.get("height", 128))) if colour else (args.width, args.height)
+        self.render = render_tft if colour else render
         self.display = self._display()
         self.net: Dict[str, Any] = {}
         self._dirty = asyncio.Event()
@@ -99,8 +104,16 @@ class Hub:
         a = self.args
         if a.display == "png":
             return PngDisplay(a.png_dir)
+        if a.display == "tft-png":
+            return PngDisplay(a.png_dir, scale=3)
         if a.display == "none":
             return NullDisplay()
+        if a.display == "tft":
+            try:
+                return TftDisplay(**(self.cfg.get("tft") or {}))
+            except Exception as e:  # noqa: BLE001 — keep serving the app even without a screen
+                log.error("TFT not available (%s); continuing without a display", e)
+                return NullDisplay()
         try:
             return OledDisplay(a.oled, a.width, a.height, int(str(a.i2c_address), 0), a.i2c_port, a.rotate)
         except Exception as e:  # noqa: BLE001 — keep serving the app even without a screen
@@ -170,7 +183,8 @@ class Hub:
             now = time.time()
             if now - last_records > 10:
                 self.net = {"host": socket.gethostname().split(".")[0], "ip": primary_ip(), "port": self.args.port,
-                            "token": self.token, "records": self.store.observation_count()}
+                            "token": self.token, "records": self.store.observation_count(),
+                            "public": (self.args.public_url or "").split("://")[-1].strip("/")}
                 last_records = now
             while self.state.new_alerts:
                 a = self.state.new_alerts.pop(0)
@@ -184,7 +198,7 @@ class Hub:
                 self.nav.go("home")
             if idle > self.args.sleep_after and not self.state.alerts():
                 self.nav.asleep = True
-            self.display.show(render(self.state, self.nav, (self.args.width, self.args.height), now, self.net))
+            self.display.show(self.render(self.state, self.nav, self.size, now, self.net))
             try:
                 # Joystick and data changes wake this at once; otherwise refresh for the clock and blinking.
                 await asyncio.wait_for(self._dirty.wait(), timeout=0.25)
@@ -231,7 +245,7 @@ def parse_args(argv=None) -> argparse.Namespace:
     p.add_argument("--name", default=cfg.get("name", "Helios Hub"))
     p.add_argument("--serial", default=cfg.get("serial", "auto"), help="auto | sim | /dev/ttyACM0")
     p.add_argument("--sim-speed", type=float, default=1.0, help="sim only: scenario time multiplier")
-    p.add_argument("--display", default=cfg.get("display", "oled"), choices=["oled", "png", "none"])
+    p.add_argument("--display", default=cfg.get("display", "oled"), choices=["oled", "tft", "png", "tft-png", "none"])
     p.add_argument("--oled", default=o.get("driver", "ssd1306"), choices=["ssd1306", "sh1106", "ssd1309"])
     p.add_argument("--width", type=int, default=o.get("width", 128))
     p.add_argument("--height", type=int, default=o.get("height", 64), choices=[32, 64])

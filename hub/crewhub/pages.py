@@ -98,6 +98,7 @@ class Canvas:
 class Nav:
     page: int = 0
     cursor: Dict[str, int] = field(default_factory=dict)
+    top: Dict[str, int] = field(default_factory=dict)      # first visible row of each list (colour screen scrolls statefully)
     detail: Optional[str] = None
     last_input: float = field(default_factory=time.time)
     asleep: bool = False
