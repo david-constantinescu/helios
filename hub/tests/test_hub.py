@@ -44,6 +44,11 @@ def test_parse_rejects_noise_and_half_lines(line):
     assert parse_line(line) is None
 
 
+def test_frame_carries_raw_joystick_readings():
+    f = parse_line("S,5,t=21.0,scn=0,jx=512,jy=498,sw=1")
+    assert f.values == {"cabin_temp": 21.0} and f.raw == {"jx": 512, "jy": 498, "sw": 1}
+
+
 def test_unknown_sensor_keys_are_ignored():
     f = parse_line("S,5,t=21.0,newsensor=3")
     assert f.values == {"cabin_temp": 21.0}

@@ -110,7 +110,7 @@ def mix(a: Color, b: Color, t: float) -> Color:
 
 
 def clean(s: str) -> str:
-    return s.replace("₂", "2").replace(" ", " ")
+    return s.replace("₂", "2").replace(" ", " ").replace("→", "›")
 
 
 class Canvas:

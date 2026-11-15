@@ -101,7 +101,10 @@ void sendFrame() {
   Serial.print(F(",lux=")); Serial.print(readLux(), 0);
   Serial.print(F(",rad=")); Serial.print(rad, 3);
   Serial.print(F(",cpm=")); Serial.print(max(0.0, rad * 180 + noise1() * 4), 0);
-  Serial.print(F(",scn=")); Serial.println((int)scenario);
+  Serial.print(F(",scn=")); Serial.print((int)scenario);
+  Serial.print(F(",jx=")); Serial.print(analogRead(PIN_X));       // raw stick values, so wiring problems show up in the hub's /status
+  Serial.print(F(",jy=")); Serial.print(analogRead(PIN_Y));
+  Serial.print(F(",sw=")); Serial.println(digitalRead(PIN_SW));
 }
 
 // ---- Joystick ------------------------------------------------------------------------------------------------

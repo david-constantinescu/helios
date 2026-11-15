@@ -26,14 +26,16 @@ fi
 
 say "HDMI display: fixed output mode, no console on the screen"
 HDMI_MODE=$(python3 -c 'import json;print((json.load(open("/etc/crewhub/config.json")).get("hdmi") or {}).get("mode","1920x1080@60"))' 2>/dev/null || echo 1920x1080@60)
+HDMI_FORCE=$(python3 -c 'import json;print(int(bool((json.load(open("/etc/crewhub/config.json")).get("hdmi") or {}).get("force_mode", False))))' 2>/dev/null || echo 0)
 CMDLINE=/boot/firmware/cmdline.txt; [ -f "$CMDLINE" ] || CMDLINE=/boot/cmdline.txt
 if [ -f "$CMDLINE" ]; then
-  sudo python3 - "$CMDLINE" "$HDMI_MODE" <<'PY'
+  sudo python3 - "$CMDLINE" "$HDMI_MODE" "$HDMI_FORCE" <<'PY'
 import sys
-path, mode = sys.argv[1], sys.argv[2]
+path, mode, force = sys.argv[1], sys.argv[2], sys.argv[3] == "1"
 t = open(path).read().split()
 t = [x for x in t if x != "console=tty1" and not x.startswith("video=HDMI-A-1:")]      # no text console on the screen
-t += ["video=HDMI-A-1:" + mode + "e"]          # "e": the framebuffer exists even before a monitor is plugged in
+if force:
+    t += ["video=HDMI-A-1:" + mode + "e"]       # opt-in ("hdmi.force_mode"): the framebuffer exists even with no monitor plugged in
 for flag in ("consoleblank=0", "vt.global_cursor_default=0"):
     if flag not in t:
         t.append(flag)

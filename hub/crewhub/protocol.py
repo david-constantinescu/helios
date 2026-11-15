@@ -37,6 +37,7 @@ class Frame:
     seq: int
     values: Dict[str, float]
     scenario: str = "normal"
+    raw: Dict[str, int] = field(default_factory=dict)       # raw joystick readings (jx, jy: 0–1023, sw: 1 = released) for diagnosing wiring
 
 
 @dataclass
@@ -78,6 +79,7 @@ def parse_line(raw: Union[bytes, str]) -> Optional[Message]:
         except ValueError:
             return None
         values: Dict[str, float] = {}
+        raw: Dict[str, int] = {}
         scenario = "normal"
         for p in parts[1:]:
             k, sep, v = p.partition("=")
@@ -87,6 +89,12 @@ def parse_line(raw: Union[bytes, str]) -> Optional[Message]:
                 try:
                     scenario = SCENARIOS[int(v)]
                 except (ValueError, IndexError):
+                    pass
+                continue
+            if k in ("jx", "jy", "sw"):
+                try:
+                    raw[k] = int(v)
+                except ValueError:
                     pass
                 continue
             if k not in KEYS:
@@ -100,7 +108,7 @@ def parse_line(raw: Union[bytes, str]) -> Optional[Message]:
             values[KEYS[k]] = f
         if not values:
             return None
-        return Frame(seq=seq, values=values, scenario=scenario)
+        return Frame(seq=seq, values=values, scenario=scenario, raw=raw)
     return None
 
 

@@ -152,6 +152,8 @@ class Hub:
             self.state.uno_version = msg.version
             self.state.touch()
         elif isinstance(msg, Frame):
+            if msg.raw:
+                self.state.joy["raw"] = dict(msg.raw)
             new = self.state.on_frame(msg)
             for a in new:
                 self.store.log_event("alert", a.text)

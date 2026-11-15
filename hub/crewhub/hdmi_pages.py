@@ -447,14 +447,19 @@ def _home_left(S: Screen, state: HubState, p: Dict[str, Any], alerts: List[Alert
     for i, line in enumerate(S.wrap(sub, 24, "Regular", x0 + lw_ - PAD - tx, 3)):
         S.text(tx, y0 + 238 + i * 32, line, 24, "Regular", DIM)
     S.hline(x0 + PAD, x0 + lw_ - PAD, y0 + 332)
-    S.text(x0 + PAD + 8, y0 + 366, "ALERTS", 14, "Bold", FAINT)
-    if not alerts:
+    rows = [(a.text, a.level) for a in alerts[:3]]
+    heading = "ALERTS"
+    if not rows:                                  # nothing to acknowledge: show what changed in the person's own numbers
+        heading = "WHAT CHANGED"
+        rows = [(c.get("text", ""), max(0, int(c.get("level", 0) or 0))) for c in (p.get("changes") or [])[:3] if c.get("text")]
+    S.text(x0 + PAD + 8, y0 + 366, heading, 14, "Bold", FAINT)
+    if not rows:
         S.dot(x0 + PAD + 14, y0 + 412, 7, LEVEL[0])
         S.text(x0 + PAD + 34, y0 + 412, "All quiet", 24, "Medium", DIM)
-    for i, a in enumerate(alerts[:3]):
+    for i, (text, lv) in enumerate(rows):
         yy = y0 + 410 + i * 46
-        S.dot(x0 + PAD + 14, yy, 7, LEVEL[a.level])
-        S.text(x0 + PAD + 34, yy, S.fit(a.text, 24, "Medium", lw_ - 2 * PAD - 44), 24, "Medium", TEXT)
+        S.dot(x0 + PAD + 14, yy, 7, LEVEL[lv])
+        S.text(x0 + PAD + 34, yy, S.fit(text, 24, "Medium", lw_ - 2 * PAD - 44), 24, "Medium", TEXT)
 
 
 HOME_SENSORS = ("cabin_temp", "humidity", "pressure", "co2", "o2", "noise")
@@ -691,7 +696,7 @@ class Renderer:
             w("c:detail", content, _metric_key(state, kind, nav.detail, metrics), lambda: _metric_pane(S, state, kind, nav.detail, metrics, content))
         elif page == "home":
             lb, cb, rb = _home_boxes(content)
-            w("c:hl", lb, (p.get("person"), (p.get("mission") or {}).get("day"), _home_status(state, p), p.get("overall"), tuple((a.text, a.level) for a in alerts[:3]), len(alerts)),
+            w("c:hl", lb, (p.get("person"), (p.get("mission") or {}).get("day"), _home_status(state, p), p.get("overall"), tuple((a.text, a.level) for a in alerts[:3]), len(alerts), repr(p.get("changes"))),
               lambda: _home_left(S, state, p, alerts, lb))
             w("c:hc", cb, (tuple((k, state.latest.get(k), state.levels.get(k, 0)) for k in HOME_SENSORS if k in state.latest),
                            max(state.levels.values()) if state.levels else None), lambda: _home_cabin(S, state, cb))
