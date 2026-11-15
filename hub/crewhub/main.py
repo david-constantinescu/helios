@@ -240,7 +240,7 @@ class Hub:
                         self._deck = Deck()
                         self._last_key = None
                         self._warmed = False
-                    size = self.display.size
+                    size = self._render_size()
                     key = self._frame_key(now, size)
                     if not self._warmed:                                      # build the glass tiles for every page once, off the main thread
                         self._warmed = True
@@ -263,6 +263,15 @@ class Hub:
             except asyncio.TimeoutError:
                 pass
             self._dirty.clear()
+
+    def _render_size(self) -> tuple:
+        """What the pages are drawn at. On a 1080p output they are drawn at 720p and scaled up when written — a Pi Zero 2 W is
+        about twice as fast that way (config: hdmi.render_height; 0 = draw at the screen's own size)."""
+        fw, fh = self.display.size
+        rh = int((self.cfg.get("hdmi") or {}).get("render_height", 720))
+        if rh and fh > rh:
+            return (round(fw * rh / fh), rh)
+        return (fw, fh)
 
     def _background(self, size) -> None:
         try:

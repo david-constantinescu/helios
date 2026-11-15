@@ -8,6 +8,7 @@ Only the visible page is ever written to the screen.
 from __future__ import annotations
 
 import copy
+import math
 import threading
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -72,26 +73,40 @@ class Deck:
         return v
 
     def _update(self, pg: _Page, fb: FastFb, img: Image.Image, dirty: List[Box]) -> List[Box]:
-        """Brings the page's packed buffer up to date with its canvas. Returns the rectangles that were repacked."""
-        w, h = fb.size
+        """Brings the page's packed buffer (screen resolution, screen pixel format) up to date with its canvas.
+        The canvas may be smaller than the screen (drawn at 720p, shown on a 1080p output): changed rectangles are scaled up
+        with a bilinear filter. Returns the screen rectangles that were repacked."""
+        fw, fh = fb.size
+        rw, rh = img.size
+        kx, ky = fw / rw, fh / rh
         stride, px = fb.info.stride, fb.info.bpp // 8
         if pg.packed is None:
-            pg.packed = bytearray(stride * h)
-            dirty = [(0, 0, w, h)]
+            pg.packed = bytearray(stride * fh)
+            dirty = [(0, 0, rw, rh)]
         out: List[Box] = []
         for x0, y0, x1, y1 in dirty:
-            x0, y0, x1, y1 = max(0, x0), max(0, y0), min(w, x1), min(h, y1)
+            x0, y0, x1, y1 = max(0, x0), max(0, y0), min(rw, x1), min(rh, y1)
             if x1 <= x0 or y1 <= y0:
                 continue
-            data = pack(img.crop((x0, y0, x1, y1)), fb.info.bpp)
-            rowlen = (x1 - x0) * px
-            if rowlen == stride:
-                pg.packed[y0 * stride: y0 * stride + len(data)] = data
+            if kx == 1 and ky == 1:
+                fx0, fy0, fx1, fy1 = x0, y0, x1, y1
+                region = img.crop((x0, y0, x1, y1))
             else:
-                for i in range(y1 - y0):
-                    o = (y0 + i) * stride + x0 * px
+                fx0, fy0, fx1, fy1 = int(x0 * kx), int(y0 * ky), min(fw, math.ceil(x1 * kx)), min(fh, math.ceil(y1 * ky))
+                ex0, ey0 = max(0, (x0 - 2) & ~1), max(0, (y0 - 2) & ~1)              # a margin, so the filter sees real neighbours
+                ex1, ey1 = min(rw, (x1 + 3) & ~1), min(rh, (y1 + 3) & ~1)
+                big = img.crop((ex0, ey0, ex1, ey1)).resize((round((ex1 - ex0) * kx), round((ey1 - ey0) * ky)), Image.BILINEAR)
+                ox, oy = int(ex0 * kx), int(ey0 * ky)
+                region = big.crop((fx0 - ox, fy0 - oy, fx1 - ox, fy1 - oy))
+            data = pack(region, fb.info.bpp)
+            rowlen = (fx1 - fx0) * px
+            if rowlen == stride:
+                pg.packed[fy0 * stride: fy0 * stride + len(data)] = data
+            else:
+                for i in range(fy1 - fy0):
+                    o = (fy0 + i) * stride + fx0 * px
                     pg.packed[o:o + rowlen] = data[i * rowlen:(i + 1) * rowlen]
-            out.append((x0, y0, x1, y1))
+            out.append((fx0, fy0, fx1, fy1))
         pg.ready = True
         return out
 
@@ -151,4 +166,4 @@ class Deck:
                     v.cursor[name] = i
                     pg.renderer.draw(state, v, size, now, net)
                 img, _ = pg.renderer.draw(state, self._view(nav, idx), size, now, net)
-                self._update(pg, fb, img, [(0, 0, size[0], size[1])])
+                self._update(pg, fb, img, [(0, 0, img.size[0], img.size[1])])

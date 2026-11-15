@@ -838,19 +838,7 @@
  },
  {
   "clip": "A10-trends",
-  "t": 2.01,
-  "type": "tap",
-  "x": 296,
-  "y": 688,
-  "unit": "pt",
-  "screen": {
-   "wPt": 402,
-   "hPt": 874
-  }
- },
- {
-  "clip": "A10-trends",
-  "t": 9.81,
+  "t": 4.28,
   "type": "tap",
   "x": 311,
   "y": 261,
@@ -862,7 +850,7 @@
  },
  {
   "clip": "A10-trends",
-  "t": 15.0,
+  "t": 9.5,
   "type": "tap",
   "x": 348,
   "y": 261,
@@ -874,7 +862,7 @@
  },
  {
   "clip": "A10-trends",
-  "t": 20.13,
+  "t": 14.6,
   "type": "tap",
   "x": 262,
   "y": 261,
@@ -886,10 +874,151 @@
  },
  {
   "clip": "A10-trends",
-  "t": 24.77,
+  "t": 20.77,
   "type": "tap",
   "x": 300,
   "y": 83,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A10-trends",
+  "t": 23.52,
+  "type": "tap",
+  "x": 203,
+  "y": 135,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A10-trends",
+  "t": 28.26,
+  "type": "swipe",
+  "x": 200,
+  "y": 700,
+  "x2": 200,
+  "y2": 400,
+  "duration": 1.2,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A10-trends",
+  "t": 31.74,
+  "type": "swipe",
+  "x": 200,
+  "y": 400,
+  "x2": 200,
+  "y2": 700,
+  "duration": 1.2,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A10-trends",
+  "t": 34.7,
+  "type": "tap",
+  "x": 300,
+  "y": 83,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A10-trends",
+  "t": 37.46,
+  "type": "tap",
+  "x": 203,
+  "y": 135,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A11-hazards",
+  "t": 4.03,
+  "type": "swipe",
+  "x": 200,
+  "y": 700,
+  "x2": 200,
+  "y2": 300,
+  "duration": 1.5,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A11-hazards",
+  "t": 8.44,
+  "type": "swipe",
+  "x": 200,
+  "y": 700,
+  "x2": 200,
+  "y2": 300,
+  "duration": 1.5,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A11-hazards",
+  "t": 12.91,
+  "type": "swipe",
+  "x": 200,
+  "y": 300,
+  "x2": 200,
+  "y2": 700,
+  "duration": 1.5,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A11-hazards",
+  "t": 15.87,
+  "type": "swipe",
+  "x": 200,
+  "y": 300,
+  "x2": 200,
+  "y2": 700,
+  "duration": 1.5,
+  "unit": "pt",
+  "screen": {
+   "wPt": 402,
+   "hPt": 874
+  }
+ },
+ {
+  "clip": "A11-hazards",
+  "t": 18.85,
+  "type": "swipe",
+  "x": 200,
+  "y": 300,
+  "x2": 200,
+  "y2": 700,
+  "duration": 1.5,
   "unit": "pt",
   "screen": {
    "wPt": 402,

@@ -583,3 +583,26 @@ def test_widescreen_header_shows_houston_and_mars_time_not_link_pills():
     h, m = map(int, mars_clock(t).split(":"))
     assert 0 <= h < 24 and 0 <= m < 60
     assert mars_clock(t + 88775.244) == mars_clock(t)           # a sol later: the same Mars clock time
+
+
+def test_deck_draws_at_720p_and_shows_on_a_1080p_output():
+    import numpy as np
+    from PIL import Image
+    from crewhub.deck import Deck
+    from crewhub.fb_fast import FastFb, FbInfo, pack
+    from crewhub.hdmi_pages import Renderer
+    st = _wide_state()
+    fb = FastFb(info=FbInfo(1920, 1080, 16, 3840), buf=bytearray(3840 * 1080))
+    net, size, now = {"token": "ABC123", "ip": "1.2.3.4", "public": "x.me"}, (1280, 720), time.time()
+    deck, nav = Deck(), Nav()
+    deck.draw_active(st, nav, size, now, net, fb)
+    want = pack(Renderer().draw(st, nav, size, now, net)[0].resize((1920, 1080), Image.BILINEAR), 16)
+    assert bytes(fb.buf) == want                                 # first frame: the whole canvas scaled up once
+    nav.go("vitals")
+    deck.draw_active(st, nav, size, now, net, fb)
+    handle(nav, "D", st)                                         # a move: only the changed rectangles are scaled and written
+    written = deck.draw_active(st, nav, size, now, net, fb)
+    assert 0 < written < 1920 * 1080 * 2
+    full = np.frombuffer(pack(Renderer().draw(st, nav, size, now, net)[0].resize((1920, 1080), Image.BILINEAR), 16), dtype="<u2")
+    got = np.frombuffer(bytes(fb.buf), dtype="<u2")
+    assert (got != full).mean() < 0.01                           # region-wise scaling matches whole-frame scaling, give or take seams

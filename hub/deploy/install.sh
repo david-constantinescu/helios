@@ -34,7 +34,8 @@ import sys
 path, mode, force = sys.argv[1], sys.argv[2], sys.argv[3] == "1"
 t = open(path).read().split()
 t = [x for x in t if x != "console=tty1" and not x.startswith("video=HDMI-A-1:")]      # no text console on the screen
-t += ["video=HDMI-A-1:" + mode + ("e" if force else "")]   # a fixed, light output mode; "e" (hdmi.force_mode) keeps it alive with no monitor
+if force:                                    # opt-in only: on the Pi Zero 2 W a video= parameter has stopped it booting
+    t += ["video=HDMI-A-1:" + mode + "e"]
 for flag in ("consoleblank=0", "vt.global_cursor_default=0"):
     if flag not in t:
         t.append(flag)
