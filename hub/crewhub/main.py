@@ -93,6 +93,7 @@ class Hub:
                                 public_origin=args.public_url, push=self.push)
         if args.serial == "sim":
             self.server.on_joystick = self._remote_joystick
+        self.server.link_diag = lambda: self.link.diag() if hasattr(self.link, "diag") else {}
         self.server.screen = lambda: {"page": self.nav.name, "detail": self.nav.detail, "asleep": self.nav.asleep}
         colour = args.display in ("tft", "tft-png")
         wide = args.display in ("hdmi", "hdmi-png")
@@ -161,6 +162,7 @@ class Hub:
                     self.nav.asleep = False
             await self.server.send_frame()
         elif isinstance(msg, Joy):
+            self.state.joy.update(count=self.state.joy["count"] + 1, last=msg.key, ts=time.time())
             await self.on_joystick(self.joy_map.get(msg.key, msg.key))
         self._dirty.set()
 

@@ -45,6 +45,7 @@ class HubServer:
         self.send_to_uno = send_to_uno or (lambda name: False)
         self.sockets: Dict[int, ServerConnection] = {}
         self.devices: Dict[int, str] = {}
+        self.link_diag: Callable[[], Dict[str, Any]] = lambda: {}
         self.on_joystick: Optional[Callable[[str], Any]] = None     # set only with the simulated Uno (testing without hardware)
         self.screen: Callable[[], Dict[str, Any]] = lambda: {}
         self._ids = itertools.count(1)
@@ -89,7 +90,8 @@ class HubServer:
     def status(self) -> Dict[str, Any]:
         s = self.state
         return {"hub": s.name, "version": VERSION, "uptime_s": int(time.time() - s.started),
-                "uno": {"connected": s.uno_connected, "port": s.uno_port, "version": s.uno_version},
+                "uno": {"connected": s.uno_connected, "port": s.uno_port, "version": s.uno_version, "link": self.link_diag(),
+                        "joystick": dict(s.joy)},
                 "phones": [c.name for c in s.clients.values()], "env": s.env_payload(),
                 "persons": [{"key": k, "name": (v.get("person") or {}).get("name")} for k, v in s.snapshots.items()],
                 "observations": s.store.observation_count(), "alerts": [a.text for a in s.alerts()], "screen": self.screen()}

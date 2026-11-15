@@ -29,6 +29,13 @@ class SerialLink:
         self.port, self.baud = port, baud
         self.ser = None
         self._stop = False
+        self.rx_lines = self.rx_ok = self.rx_bad = 0          # what the Uno has been sending, for diagnosing a silent link
+        self.last_raw = ""
+        self.last_ok: Optional[float] = None
+
+    def diag(self) -> dict:
+        return {"baud": self.baud, "lines": self.rx_lines, "ok": self.rx_ok, "bad": self.rx_bad, "last_raw": self.last_raw,
+                "last_ok_age_s": None if self.last_ok is None else round(time.time() - self.last_ok, 1)}
 
     async def run(self) -> None:
         import serial  # pyserial
@@ -57,9 +64,15 @@ class SerialLink:
                             raise IOError("no data from the Uno for 10 s")
                         continue
                     last_data = time.time()
+                    self.rx_lines += 1
+                    self.last_raw = "".join(ch if 32 <= ord(ch) < 127 else "?" for ch in raw[:80].decode("latin-1"))
                     msg = parse_line(raw)
                     if msg is not None:
+                        self.rx_ok += 1
+                        self.last_ok = time.time()
                         await self.on_message(msg)
+                    else:
+                        self.rx_bad += 1
             except Exception as e:  # noqa: BLE001 — unplugged, permissions, reset: retry
                 log.warning("Serial %s: %s", port, e)
                 await self.on_status(False, port)

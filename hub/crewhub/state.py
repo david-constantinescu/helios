@@ -52,6 +52,7 @@ class HubState:
         self.snapshots: Dict[str, Dict[str, Any]] = store.snapshots()
         self.current_person: Optional[str] = store.get("current_person")
         self.muted: Set[str] = set()          # habitat alerts acknowledged on the hub (until the level changes)
+        self.joy = {"count": 0, "last": None, "ts": None}     # joystick events received from the Uno (for diagnosing)
         self.version = 0                      # bumps on every change the display should show
         self.jump_to_alerts = False           # a new alert arrived: the display should show it
         self.new_alerts: List[Alert] = []     # person alerts not yet pushed to subscribed devices

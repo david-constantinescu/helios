@@ -131,7 +131,7 @@ enum HealthConnect {
         let mid = "mission-\(newId().prefix(8))"
         hub.save(Mission(id: mid, name: "My mission", environment: "station", startDate: Calendar.current.startOfDay(for: Date()),
                          plannedDays: 180, isSimulated: false))
-        let p = Person(id: "person-\(newId().prefix(8))", displayName: "Me", avatar: nil, missionId: mid, isHealthKitOwner: true)
+        let p = Person(id: "person-\(newId().prefix(8))", displayName: "David", avatar: nil, missionId: mid, isHealthKitOwner: true)
         hub.save(p)
         app.reloadPersons()
         return p
